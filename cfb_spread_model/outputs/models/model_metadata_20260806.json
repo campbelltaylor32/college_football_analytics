@@ -1,0 +1,39 @@
+{
+  "model_name": "logistic_regression",
+  "threshold": 0.5,
+  "n_features": 75,
+  "trained_on_seasons": [
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "walk_forward_mean_precision": 0.492208640298528,
+  "walk_forward_mean_coverage": 0.4582100189208245,
+  "walk_forward_meets_floor_every_fold": true,
+  "final_holdout_season": 2025,
+  "final_holdout_metrics": {
+    "n": 215,
+    "threshold": 0.5,
+    "precision": 0.4727272727272727,
+    "recall": 0.49056603773584906,
+    "coverage": 0.5116279069767442,
+    "n_flagged": 110,
+    "roc_auc": 0.5056257573134845
+  },
+  "current_notebook_baseline": {
+    "precision": 0.569,
+    "recall": 0.298,
+    "coverage": 0.25,
+    "n_features": 52,
+    "threshold": 0.6,
+    "selection_metric": "roc_auc (not precision)",
+    "evaluation": "single fixed split, train=2015-2022, test=2023-2024"
+  },
+  "beats_baseline_precision": false
+}

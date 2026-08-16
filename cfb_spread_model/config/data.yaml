@@ -1,0 +1,58 @@
+# Source CSV is the repo-level Data/ folder's canonical training set -- resolved relative to
+# this project's PROJECT_ROOT (cfb_spread_model/), not the repo root. See utils/paths.py.
+source_csv: ../Data/CFB_Gambling_Predictors_Final_PBP.csv
+
+id_columns: [game_id, home_team, away_team]
+label_column: home_covered
+
+# season/week exist only to drive walk-forward splitting (modeling/splits.py) -- they are NOT
+# team-performance predictors. The current notebook (Python Scripts/CFB_Gambling_Model.ipynb)
+# leaves them inside its feature matrix X by omission (its exclude_vars list only drops
+# game_id/home_team/away_team); data.py must exclude them from X whenever
+# include_split_columns_as_features is false, which is the default and the production setting.
+split_only_columns: [season, week]
+include_split_columns_as_features: false
+
+# Columns matching any of these substrings are dropped from the feature matrix entirely (see
+# get_feature_columns() in data.py) -- checked BEFORE any of Stage 1/2 feature selection ever
+# sees them, so this is a hard exclusion, not just a de-prioritization.
+#
+# prev_week_*: single-most-recent-game stats -- the noisiest of the CSV's three temporal
+# transforms per base metric (prev_week_X / X_avg_all / X_avg3 all exist for the same ~168 base
+# metrics; avg_all/avg3 are smoothed, prev_week_ is one game of variance). The
+# 2025-09-15-dated production model that predates this project used 52 features with a mix of
+# all three transforms; this project's first walk-forward-validated production model
+# (2026-08-06) carried 40 features, 18 of them (45%) prev_week_* -- and scored 0.429 precision
+# on the true 2025 holdout, BELOW that season's 49.3% home_covered base rate. Excluded as a
+# direct experiment in response to that finding -- see docs/project_story.md for the
+# before/after result.
+excluded_column_patterns: [prev_week_]
+
+# How the home_*/away_* avg_all/avg3/non-temporal columns are presented to the model:
+#   raw_dual      (default) -- unchanged: separate home_X and away_X columns, as today.
+#   differential  -- replaces those columns with diff_<transform>_<base> = home_X - away_X
+#                    (the matchup, arguably the actually-predictive quantity for a spread
+#                    problem) plus trend_<side>_<base> = <side>_avg3 - <side>_avg_all (recent
+#                    form vs season baseline). Built by feature_engineering.py, applied in
+#                    data.build_feature_matrix. prev_week_* and context columns (spread,
+#                    home_favored, etc.) are unaffected by this toggle either way. See
+#                    docs/feature_selection_methodology.md and docs/project_story.md ("Run 3")
+#                    for the rationale and result.
+feature_representation: raw_dual
+
+# Pre-game-known market/context columns that ARE legitimate features (not identifiers, not
+# leaky). spread is stored as abs(spread) upstream (Merge_Predictors_CFB_Historical.R:91), so
+# home_favored is the only column carrying betting-line direction -- keep both, they are not
+# redundant with each other.
+retained_context_columns: [spread, home_favored, neutral_site, conference_game]
+
+# Quality-gate sanity checks (data_validation.py) -- verified actual values as of this build.
+# A mismatch here means the upstream R pipeline changed and this project's assumptions (column
+# groupings in correlation_pruning.py, leakage tests) need to be re-verified before trusting them.
+expected_row_count_min: 2300
+expected_column_count: 1054
+
+# Verified min/max week present in the source CSV (upstream R scripts cap at week<=12 and the
+# post-lag na.omit() pushes the practical minimum to week 4). Not a filter this project applies
+# -- data_validation.py asserts the loaded CSV already matches this, as a drift check.
+week_range: {min: 4, max: 12}

@@ -1,0 +1,167 @@
+{
+  "none": {
+    "brier_score": 0.25716308496696505,
+    "roc_auc": 0.5393803011943915,
+    "rank_monotonicity": 0.270801280154532,
+    "buckets": [
+      {
+        "bucket": 0,
+        "mean_predicted": 0.2800207961659143,
+        "actual_rate": 0.4090909090909091,
+        "n": 22
+      },
+      {
+        "bucket": 1,
+        "mean_predicted": 0.3410479827774151,
+        "actual_rate": 0.5238095238095238,
+        "n": 21
+      },
+      {
+        "bucket": 2,
+        "mean_predicted": 0.3861821223283718,
+        "actual_rate": 0.45454545454545453,
+        "n": 22
+      },
+      {
+        "bucket": 3,
+        "mean_predicted": 0.4251919777808614,
+        "actual_rate": 0.42857142857142855,
+        "n": 21
+      },
+      {
+        "bucket": 4,
+        "mean_predicted": 0.45859087117661895,
+        "actual_rate": 0.45454545454545453,
+        "n": 22
+      },
+      {
+        "bucket": 5,
+        "mean_predicted": 0.49442058635187097,
+        "actual_rate": 0.6190476190476191,
+        "n": 21
+      },
+      {
+        "bucket": 6,
+        "mean_predicted": 0.5191307532525723,
+        "actual_rate": 0.5238095238095238,
+        "n": 21
+      },
+      {
+        "bucket": 7,
+        "mean_predicted": 0.56195342822247,
+        "actual_rate": 0.45454545454545453,
+        "n": 22
+      },
+      {
+        "bucket": 8,
+        "mean_predicted": 0.626884543071984,
+        "actual_rate": 0.38095238095238093,
+        "n": 21
+      },
+      {
+        "bucket": 9,
+        "mean_predicted": 0.728155860856837,
+        "actual_rate": 0.6818181818181818,
+        "n": 22
+      }
+    ]
+  },
+  "isotonic": {
+    "brier_score": 0.24962893768210148,
+    "roc_auc": 0.5324562921931798,
+    "rank_monotonicity": 0.9486832980505139,
+    "buckets": [
+      {
+        "bucket": 0,
+        "mean_predicted": 0.456971506390111,
+        "actual_rate": 0.46846846846846846,
+        "n": 111
+      },
+      {
+        "bucket": 1,
+        "mean_predicted": 0.5205733611033297,
+        "actual_rate": 0.5,
+        "n": 48
+      },
+      {
+        "bucket": 2,
+        "mean_predicted": 0.5405405405405406,
+        "actual_rate": 0.5,
+        "n": 10
+      },
+      {
+        "bucket": 3,
+        "mean_predicted": 0.5421348314606742,
+        "actual_rate": 0.5434782608695652,
+        "n": 46
+      }
+    ]
+  },
+  "platt": {
+    "brier_score": 0.24888811505796757,
+    "roc_auc": 0.5393803011943915,
+    "rank_monotonicity": 0.270801280154532,
+    "buckets": [
+      {
+        "bucket": 0,
+        "mean_predicted": 0.465787423906567,
+        "actual_rate": 0.4090909090909091,
+        "n": 22
+      },
+      {
+        "bucket": 1,
+        "mean_predicted": 0.4745750870655338,
+        "actual_rate": 0.5238095238095238,
+        "n": 21
+      },
+      {
+        "bucket": 2,
+        "mean_predicted": 0.48108712016577776,
+        "actual_rate": 0.45454545454545453,
+        "n": 22
+      },
+      {
+        "bucket": 3,
+        "mean_predicted": 0.48672072893744234,
+        "actual_rate": 0.42857142857142855,
+        "n": 21
+      },
+      {
+        "bucket": 4,
+        "mean_predicted": 0.491546853649854,
+        "actual_rate": 0.45454545454545453,
+        "n": 22
+      },
+      {
+        "bucket": 5,
+        "mean_predicted": 0.4967259136116128,
+        "actual_rate": 0.6190476190476191,
+        "n": 21
+      },
+      {
+        "bucket": 6,
+        "mean_predicted": 0.5002981784053179,
+        "actual_rate": 0.5238095238095238,
+        "n": 21
+      },
+      {
+        "bucket": 7,
+        "mean_predicted": 0.5064886145099124,
+        "actual_rate": 0.45454545454545453,
+        "n": 22
+      },
+      {
+        "bucket": 8,
+        "mean_predicted": 0.5158700932954075,
+        "actual_rate": 0.38095238095238093,
+        "n": 21
+      },
+      {
+        "bucket": 9,
+        "mean_predicted": 0.530474292273796,
+        "actual_rate": 0.6818181818181818,
+        "n": 22
+      }
+    ]
+  }
+}

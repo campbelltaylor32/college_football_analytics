@@ -1,0 +1,63 @@
+# Feature-reduction configuration for cfb_cover_model.
+# See docs/feature_selection_methodology.md for the full rationale behind each stage.
+
+# --- Stage 2: temporal-transform ablation --------------------------------------------
+# Every one of the ~160 base game stats is tripled into prev_week_/*_avg_all/*_avg3 in
+# the source CSV. Rather than feeding a model all three simultaneously (today's notebook)
+# or replacing them with a differential (the prior cfb_spread_model project), this runs a
+# controlled grid over which single transform (or transform pair) carries the signal,
+# scored through the walk-forward harness.
+transform_ablation:
+  candidates:
+    - name: avg_all_only
+      transforms: ["avg_all"]
+    - name: avg3_only
+      transforms: ["avg3"]
+    - name: prev_week_only
+      transforms: ["prev_week"]
+    - name: avg_all_plus_trend
+      # trend_<stat> = <stat>_avg3 - <stat>_avg_all, engineered in feature_engineering
+      transforms: ["avg_all", "trend"]
+    - name: all_three
+      # baseline: today's production notebook's approach, kept for comparison only
+      transforms: ["prev_week", "avg_all", "avg3"]
+
+# --- Home/away representation ---------------------------------------------------------
+home_away_representation:
+  candidates: ["raw_dual", "differential"]
+  # raw_dual: keep home_X and away_X as separate columns.
+  # differential: replace with diff_X = home_X - away_X.
+  # Both are scored for walk-forward precision AND rank-correlation with true holdout
+  # performance - the differential form is not assumed safe by default (see project_story
+  # of the sibling cfb_spread_model project for why that check matters).
+
+# --- Stage 3: correlation-cluster pruning ----------------------------------------------
+correlation_pruning:
+  method: "average_linkage_hierarchical"
+  correlation_threshold: 0.90
+  distance_metric: "1 - abs(spearman_corr)"
+  # Fit fresh on each walk-forward fold's training rows only - never on validation/holdout.
+
+# --- Stage 4: embedded selection (primary reducer) --------------------------------------
+embedded_selection:
+  method: "elastic_net_logistic"
+  # Kept intentionally small (9 combos x 2 inner splits = 18 fits per outer fold) for
+  # runtime feasibility on a laptop; widen if compute allows - see
+  # docs/feature_selection_methodology.md.
+  l1_ratio_grid: [0.3, 0.5, 0.7]
+  C_grid: [0.01, 0.1, 1.0]
+  inner_cv_folds: 2          # nested inside each walk-forward training fold only
+  max_features: 60
+
+# --- Stage 5: optional PCA/factor collapse (compared, not assumed superior) -----------
+pca_reduction:
+  enabled: true
+  # Collapse each stat-family block (columns sharing a semantic prefix, e.g. all
+  # Offense EPA/success-rate columns) into a small number of components, compared
+  # head-to-head against stages 3+4 rather than chained after them.
+  variance_retained: 0.90
+  stat_family_prefixes:
+    - "Offense_"
+    - "Defense_"
+    - "Total_Offense_"
+    - "Total_Defense_"

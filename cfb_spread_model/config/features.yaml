@@ -1,0 +1,30 @@
+correlation_pruning:
+  # Within each {prev_week_X, X_avg_all, X_avg3} triplet (336 metric x side groups, 168 base
+  # metrics per side) -- these are definitionally rolling transforms of the same underlying
+  # stat at different lags, so this threshold is deliberately looser than the general pass
+  # below: we actively want to collapse them.
+  temporal_collapse_corr_threshold: 0.85
+
+  # Global pairwise pass on the survivors of the temporal collapse (now a few hundred columns,
+  # tractable for a full correlation matrix). Catches offense/defense-mirror pairs (41 verified
+  # `_allowed` pairs) and the 16 unpaired algebraic-ratio columns (point_differential,
+  # turnover_margin, yards_per_pass, penalty_yard_margin, etc.) against their raw components.
+  general_corr_threshold: 0.90
+
+  # Tie-breaker when dropping one member of a correlated pair/triplet: keep whichever has the
+  # stronger raw association with home_covered, computed on the fold's training rows only.
+  # Point-biserial correlation is just Pearson correlation between a continuous feature and a
+  # binary label, so no separate implementation is needed beyond pandas/scipy's pearsonr.
+  univariate_association_metric: point_biserial
+
+feature_selection:
+  # 52 is included so Stage 2 can be compared apples-to-apples against the live
+  # Model Information/selected_features_best_model_20250915.json feature count.
+  candidate_feature_counts: [25, 40, 52, 75, 100, 150, 200]
+
+  # Matches the current notebook's permutation_importance n_repeats for continuity of comparison.
+  permutation_importance_n_repeats: 50
+
+  # Both run and reported side by side (outputs/feature_analysis/), never silently merged --
+  # lets a reader sanity-check that the two independent selection methods roughly agree.
+  selection_methods: [permutation_importance_sweep, rfecv]

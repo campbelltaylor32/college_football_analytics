@@ -1,0 +1,68 @@
+{
+  "model_name": "ols",
+  "mean_mae": 37.02183524759151,
+  "std_mae": 0.8190839905194506,
+  "selection_rationale": "Lowest mean OOF MAE across walk-forward folds; ties broken by lowest MAE std (stability).",
+  "all_models_ranked": [
+    {
+      "model_name": "ols",
+      "mean": 37.02183524759151,
+      "std": 0.8190839905194506
+    },
+    {
+      "model_name": "ridge",
+      "mean": 37.02328096328488,
+      "std": 0.8176396290274244
+    },
+    {
+      "model_name": "elasticnet",
+      "mean": 37.066289805579984,
+      "std": 0.835888384006738
+    },
+    {
+      "model_name": "xgboost",
+      "mean": 37.07067152316458,
+      "std": 0.9297401880532661
+    },
+    {
+      "model_name": "gradient_boosting",
+      "mean": 37.077182430610094,
+      "std": 0.8978761947821818
+    },
+    {
+      "model_name": "hist_gradient_boosting",
+      "mean": 37.09600553731924,
+      "std": 0.9571087899296811
+    },
+    {
+      "model_name": "lightgbm",
+      "mean": 37.12082390978191,
+      "std": 1.0087398240005363
+    },
+    {
+      "model_name": "lasso",
+      "mean": 37.133929980977385,
+      "std": 0.8376446725673751
+    },
+    {
+      "model_name": "random_forest",
+      "mean": 37.49146332261303,
+      "std": 0.9068867877297037
+    },
+    {
+      "model_name": "player_season_avg",
+      "mean": 39.702270920436234,
+      "std": 1.286256213032073
+    },
+    {
+      "model_name": "position_avg",
+      "mean": 41.595879390237585,
+      "std": 1.0891761129155055
+    },
+    {
+      "model_name": "player_rolling3_avg",
+      "mean": 43.49471496927333,
+      "std": 1.0250566383044302
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+# Modeling + validation configuration for cfb_cover_model.
+
+validation:
+  scheme: "expanding_window_walk_forward"
+  unit: "season"
+  # Each fold trains on all seasons strictly before the fold season (min 3 seasons of
+  # history required before the first fold) and validates on that single season.
+  min_train_seasons: 3
+
+evaluation:
+  primary_metric: "precision_at_coverage_floor"
+  # Deliberately higher than the sibling cfb_spread_model project's permissive 0.10 -
+  # the goal is a usefully-sized slate of bets, not just clearing a technicality.
+  min_coverage_floor: 0.20
+  threshold_grid: [0.50, 0.52, 0.54, 0.55, 0.56, 0.58, 0.60, 0.62, 0.65, 0.70]
+  calibration_checks: ["brier_score", "reliability_curve", "rank_monotonicity"]
+  calibration_methods_to_test: ["none", "isotonic", "platt"]
+
+# --- Track A: direct classification -----------------------------------------------------
+track_a_classifiers:
+  - name: logistic_no_selection
+    kind: logistic_regression
+    feature_set: "deterministic_pruned_only"   # honest anchor - no stage 3/4/5 reduction
+    params: {penalty: "l2", C: 1.0, max_iter: 2000}
+  - name: logistic_regression
+    kind: logistic_regression
+    feature_set: "reduced"
+    params: {penalty: "elasticnet", solver: "saga", l1_ratio: 0.5, C: 0.1, max_iter: 5000}
+  - name: logistic_regression_pca
+    kind: logistic_regression
+    feature_set: "pca_reduced"
+    params: {penalty: "l2", C: 1.0, max_iter: 2000}
+  - name: random_forest
+    kind: random_forest
+    feature_set: "reduced"
+    params: {n_estimators: 500, max_depth: 8, min_samples_leaf: 20, random_state: 42}
+  - name: gradient_boosting
+    kind: gradient_boosting
+    feature_set: "reduced"
+    params: {n_estimators: 300, max_depth: 3, learning_rate: 0.03, random_state: 42}
+  - name: xgboost
+    kind: xgboost
+    feature_set: "reduced"
+    params: {n_estimators: 400, max_depth: 4, learning_rate: 0.03, subsample: 0.8,
+             colsample_bytree: 0.7, reg_lambda: 2.0, random_state: 42}
+  - name: lightgbm
+    kind: lightgbm
+    feature_set: "reduced"
+    params: {n_estimators: 400, max_depth: 4, learning_rate: 0.03, subsample: 0.8,
+             colsample_bytree: 0.7, reg_lambda: 2.0, random_state: 42, verbosity: -1}
+  - name: catboost
+    kind: catboost
+    feature_set: "reduced"
+    params: {iterations: 400, depth: 4, learning_rate: 0.03, verbose: false, random_seed: 42}
+
+# --- Track B: regression on cover_margin, converted to probability -----------------------
+track_b_regressors:
+  - name: elastic_net_regression
+    kind: elastic_net
+    feature_set: "reduced"
+    params: {alpha: 0.5, l1_ratio: 0.5, max_iter: 5000}
+  - name: xgboost_regressor
+    kind: xgboost_regressor
+    feature_set: "reduced"
+    params: {n_estimators: 400, max_depth: 4, learning_rate: 0.03, subsample: 0.8,
+             colsample_bytree: 0.7, reg_lambda: 2.0, random_state: 42}
+  - name: quantile_regression
+    kind: quantile_regression
+    feature_set: "reduced"
+    quantiles: [0.25, 0.5, 0.75]
+    params: {alpha: 0.01, solver: "highs"}
+
+# --- Track C: stacked ensemble ------------------------------------------------------------
+track_c_stacking:
+  base_models: ["logistic_regression", "xgboost", "elastic_net_regression"]
+  meta_learner:
+    kind: logistic_regression
+    params: {penalty: "l2", C: 1.0, max_iter: 2000}
+
+baselines:
+  - always_favorite
+  - majority_class
+
+random_state: 42

@@ -1,0 +1,39 @@
+{
+  "model_name": "random_forest",
+  "threshold": 0.5,
+  "n_features": 25,
+  "trained_on_seasons": [
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "walk_forward_mean_precision": 0.4998370543885494,
+  "walk_forward_mean_coverage": 0.4153395759367391,
+  "walk_forward_meets_floor_every_fold": true,
+  "final_holdout_season": 2025,
+  "final_holdout_metrics": {
+    "n": 215,
+    "threshold": 0.5,
+    "precision": 0.5510204081632653,
+    "recall": 0.5094339622641509,
+    "coverage": 0.4558139534883721,
+    "n_flagged": 98,
+    "roc_auc": 0.5482949627834516
+  },
+  "current_notebook_baseline": {
+    "precision": 0.569,
+    "recall": 0.298,
+    "coverage": 0.25,
+    "n_features": 52,
+    "threshold": 0.6,
+    "selection_metric": "roc_auc (not precision)",
+    "evaluation": "single fixed split, train=2015-2022, test=2023-2024"
+  },
+  "beats_baseline_precision": false
+}

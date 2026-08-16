@@ -1,0 +1,78 @@
+{
+  "model_name": "gradient_boosting",
+  "mean_mae": 1.536435775862088,
+  "std_mae": 0.13239067006875305,
+  "selection_rationale": "Lowest mean OOF MAE across walk-forward folds; ties broken by lowest MAE std (stability).",
+  "all_models_ranked": [
+    {
+      "model_name": "gradient_boosting",
+      "mean": 1.536435775862088,
+      "std": 0.13239067006875305
+    },
+    {
+      "model_name": "elasticnet",
+      "mean": 1.5517347514079785,
+      "std": 0.09817523003817588
+    },
+    {
+      "model_name": "lasso",
+      "mean": 1.557693575546325,
+      "std": 0.10081143998926546
+    },
+    {
+      "model_name": "random_forest",
+      "mean": 1.565909195389946,
+      "std": 0.09632598781259027
+    },
+    {
+      "model_name": "hist_gradient_boosting",
+      "mean": 1.5670294659300126,
+      "std": 0.11081069253418487
+    },
+    {
+      "model_name": "lightgbm",
+      "mean": 1.5687810263947175,
+      "std": 0.0994717716633824
+    },
+    {
+      "model_name": "xgboost",
+      "mean": 1.5697871422579988,
+      "std": 0.1461441468407455
+    },
+    {
+      "model_name": "ridge",
+      "mean": 1.6381734017785896,
+      "std": 0.12848236410654723
+    },
+    {
+      "model_name": "ols",
+      "mean": 1.7898001098048126,
+      "std": 0.24259273086911776
+    },
+    {
+      "model_name": "ols_prior_wins_talent",
+      "mean": 1.97607547739746,
+      "std": 0.09125270048642613
+    },
+    {
+      "model_name": "rolling_3yr_avg",
+      "mean": 2.150066787550642,
+      "std": 0.15378122632978816
+    },
+    {
+      "model_name": "conference_avg",
+      "mean": 2.2387194098265994,
+      "std": 0.11309774818336836
+    },
+    {
+      "model_name": "overall_mean",
+      "mean": 2.267793539471979,
+      "std": 0.08430491066690772
+    },
+    {
+      "model_name": "prev_season_wins",
+      "mean": 2.460872017292686,
+      "std": 0.23315063664560687
+    }
+  ]
+}

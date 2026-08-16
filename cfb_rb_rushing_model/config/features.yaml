@@ -1,0 +1,26 @@
+# Rolling windows are counted in games played, not seasons (unlike the sibling
+# cfb_win_total_model project, which rolls up seasons) -- every module pairs a trailing-window
+# average with an always-on cumulative season-to-date average.
+player_rolling_windows: [3]
+team_rolling_windows: [3]
+defense_rolling_windows: [3]
+
+# Shared by both rushing_workload.py (player side) and opponent_defense_context.py (defense
+# side) so the two "explosive run" definitions are always directly comparable -- see the
+# approved plan's explicit call-out of explosive-play predictors.
+explosive_run_yard_threshold: 15
+
+# Workload-relevance gate (eligibility.py). A player-week is only a modeling/prediction
+# candidate if it clears one of these two gates, evaluated as of the player's most recently
+# PLAYED game (merge_asof, not calendar week -- see eligibility.py). Starting points grounded
+# in the live carries-per-game distribution pulled during planning, NOT validated-optimal --
+# run scripts/run_eda.py's sensitivity sweep before treating these as final (see
+# docs/assumptions_and_limitations.md item 2).
+eligibility:
+  min_trailing3_avg_carries: 8
+  min_season_to_date_carries: 15
+  min_games_played_for_avg3: 3
+
+# rest_days imputed to this value for a team's first game of a season (no prior game to diff
+# against).
+default_rest_days_season_opener: 7

@@ -1,0 +1,658 @@
+[
+  {
+    "transform_name": "all_three",
+    "transforms": [
+      "prev_week",
+      "avg_all",
+      "avg3"
+    ],
+    "representation": "differential",
+    "n_features": 491,
+    "pooled": {
+      "threshold": 0.52,
+      "precision": 0.5426621160409556,
+      "coverage": 0.4077940153096729,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 491,
+        "threshold": 0.54,
+        "precision": 0.6164383561643836,
+        "coverage": 0.3029045643153527,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 491,
+        "threshold": 0.52,
+        "precision": 0.5555555555555556,
+        "coverage": 0.421875,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 491,
+        "threshold": 0.52,
+        "precision": 0.6074766355140186,
+        "coverage": 0.39925373134328357,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 491,
+        "threshold": 0.65,
+        "precision": 0.5283018867924528,
+        "coverage": 0.2145748987854251,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 491,
+        "threshold": 0.58,
+        "precision": 0.5733333333333334,
+        "coverage": 0.29411764705882354,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 491,
+        "threshold": 0.62,
+        "precision": 0.46808510638297873,
+        "coverage": 0.20085470085470086,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5581984789571205
+  },
+  {
+    "transform_name": "avg3_only",
+    "transforms": [
+      "avg3"
+    ],
+    "representation": "raw_dual",
+    "n_features": 342,
+    "pooled": {
+      "threshold": 0.6,
+      "precision": 0.5412087912087912,
+      "coverage": 0.2533054975643702,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 342,
+        "threshold": 0.52,
+        "precision": 0.6164383561643836,
+        "coverage": 0.3029045643153527,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 342,
+        "threshold": 0.65,
+        "precision": 0.5172413793103449,
+        "coverage": 0.3020833333333333,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 342,
+        "threshold": 0.6,
+        "precision": 0.6349206349206349,
+        "coverage": 0.23507462686567165,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 342,
+        "threshold": 0.5,
+        "precision": 0.5070422535211268,
+        "coverage": 0.5748987854251012,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 342,
+        "threshold": 0.6,
+        "precision": 0.6206896551724138,
+        "coverage": 0.22745098039215686,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 342,
+        "threshold": 0.6,
+        "precision": 0.5208333333333334,
+        "coverage": 0.20512820512820512,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5695276020703729
+  },
+  {
+    "transform_name": "prev_week_only",
+    "transforms": [
+      "prev_week"
+    ],
+    "representation": "differential",
+    "n_features": 173,
+    "pooled": {
+      "threshold": 0.55,
+      "precision": 0.5367483296213809,
+      "coverage": 0.3124565066109951,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 173,
+        "threshold": 0.52,
+        "precision": 0.6049382716049383,
+        "coverage": 0.3360995850622407,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 173,
+        "threshold": 0.56,
+        "precision": 0.5263157894736842,
+        "coverage": 0.296875,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 173,
+        "threshold": 0.6,
+        "precision": 0.5925925925925926,
+        "coverage": 0.20149253731343283,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 173,
+        "threshold": 0.5,
+        "precision": 0.5639097744360902,
+        "coverage": 0.5384615384615384,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 173,
+        "threshold": 0.58,
+        "precision": 0.6,
+        "coverage": 0.21568627450980393,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 173,
+        "threshold": 0.55,
+        "precision": 0.5066666666666667,
+        "coverage": 0.32051282051282054,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5657371824623286
+  },
+  {
+    "transform_name": "avg_all_only",
+    "transforms": [
+      "avg_all"
+    ],
+    "representation": "differential",
+    "n_features": 173,
+    "pooled": {
+      "threshold": 0.56,
+      "precision": 0.5303030303030303,
+      "coverage": 0.2755741127348643,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 173,
+        "threshold": 0.52,
+        "precision": 0.5555555555555556,
+        "coverage": 0.3360995850622407,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 173,
+        "threshold": 0.58,
+        "precision": 0.5555555555555556,
+        "coverage": 0.234375,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 173,
+        "threshold": 0.56,
+        "precision": 0.6081081081081081,
+        "coverage": 0.27611940298507465,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 173,
+        "threshold": 0.58,
+        "precision": 0.527027027027027,
+        "coverage": 0.29959514170040485,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 173,
+        "threshold": 0.5,
+        "precision": 0.5206611570247934,
+        "coverage": 0.4745098039215686,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 173,
+        "threshold": 0.56,
+        "precision": 0.5370370370370371,
+        "coverage": 0.23076923076923078,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5506574067180128
+  },
+  {
+    "transform_name": "prev_week_only",
+    "transforms": [
+      "prev_week"
+    ],
+    "representation": "raw_dual",
+    "n_features": 342,
+    "pooled": {
+      "threshold": 0.62,
+      "precision": 0.5302593659942363,
+      "coverage": 0.24147529575504523,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 342,
+        "threshold": 0.6,
+        "precision": 0.6274509803921569,
+        "coverage": 0.21161825726141079,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 342,
+        "threshold": 0.6,
+        "precision": 0.5223880597014925,
+        "coverage": 0.3489583333333333,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 342,
+        "threshold": 0.55,
+        "precision": 0.576271186440678,
+        "coverage": 0.44029850746268656,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 342,
+        "threshold": 0.5,
+        "precision": 0.5197368421052632,
+        "coverage": 0.6153846153846154,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 342,
+        "threshold": 0.62,
+        "precision": 0.6140350877192983,
+        "coverage": 0.2235294117647059,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 342,
+        "threshold": 0.56,
+        "precision": 0.5588235294117647,
+        "coverage": 0.2905982905982906,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5697842809617756
+  },
+  {
+    "transform_name": "avg3_only",
+    "transforms": [
+      "avg3"
+    ],
+    "representation": "differential",
+    "n_features": 173,
+    "pooled": {
+      "threshold": 0.58,
+      "precision": 0.5264900662251656,
+      "coverage": 0.21016005567153792,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 173,
+        "threshold": 0.52,
+        "precision": 0.5833333333333334,
+        "coverage": 0.24896265560165975,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 173,
+        "threshold": 0.55,
+        "precision": 0.47692307692307695,
+        "coverage": 0.3385416666666667,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 173,
+        "threshold": 0.58,
+        "precision": 0.6111111111111112,
+        "coverage": 0.20149253731343283,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 173,
+        "threshold": 0.5,
+        "precision": 0.5491803278688525,
+        "coverage": 0.4939271255060729,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 173,
+        "threshold": 0.5,
+        "precision": 0.48360655737704916,
+        "coverage": 0.47843137254901963,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 173,
+        "threshold": 0.56,
+        "precision": 0.5,
+        "coverage": 0.2222222222222222,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5340257344355704
+  },
+  {
+    "transform_name": "avg_all_plus_trend",
+    "transforms": [
+      "avg_all",
+      "trend"
+    ],
+    "representation": "differential",
+    "n_features": 332,
+    "pooled": {
+      "threshold": 0.62,
+      "precision": 0.5255972696245734,
+      "coverage": 0.20389700765483645,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 332,
+        "threshold": 0.54,
+        "precision": 0.56,
+        "coverage": 0.3112033195020747,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 332,
+        "threshold": 0.58,
+        "precision": 0.5357142857142857,
+        "coverage": 0.2916666666666667,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 332,
+        "threshold": 0.62,
+        "precision": 0.6111111111111112,
+        "coverage": 0.20149253731343283,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 332,
+        "threshold": 0.58,
+        "precision": 0.5357142857142857,
+        "coverage": 0.340080971659919,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 332,
+        "threshold": 0.62,
+        "precision": 0.5490196078431373,
+        "coverage": 0.2,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 332,
+        "threshold": 0.5,
+        "precision": 0.45,
+        "coverage": 0.42735042735042733,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5402598817304699
+  },
+  {
+    "transform_name": "avg_all_only",
+    "transforms": [
+      "avg_all"
+    ],
+    "representation": "raw_dual",
+    "n_features": 342,
+    "pooled": {
+      "threshold": 0.6,
+      "precision": 0.5233160621761658,
+      "coverage": 0.2686151704940849,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 342,
+        "threshold": 0.56,
+        "precision": 0.559322033898305,
+        "coverage": 0.24481327800829875,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 342,
+        "threshold": 0.62,
+        "precision": 0.5897435897435898,
+        "coverage": 0.203125,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 342,
+        "threshold": 0.55,
+        "precision": 0.5853658536585366,
+        "coverage": 0.458955223880597,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 342,
+        "threshold": 0.6,
+        "precision": 0.5070422535211268,
+        "coverage": 0.2874493927125506,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 342,
+        "threshold": 0.6,
+        "precision": 0.5394736842105263,
+        "coverage": 0.2980392156862745,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 342,
+        "threshold": 0.62,
+        "precision": 0.4897959183673469,
+        "coverage": 0.2094017094017094,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5451238888999053
+  },
+  {
+    "transform_name": "all_three",
+    "transforms": [
+      "prev_week",
+      "avg_all",
+      "avg3"
+    ],
+    "representation": "raw_dual",
+    "n_features": 978,
+    "pooled": {
+      "threshold": 0.55,
+      "precision": 0.5211038961038961,
+      "coverage": 0.4286708420320111,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 978,
+        "threshold": 0.52,
+        "precision": 0.5697674418604651,
+        "coverage": 0.35684647302904565,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 978,
+        "threshold": 0.58,
+        "precision": 0.5348837209302325,
+        "coverage": 0.4479166666666667,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 978,
+        "threshold": 0.55,
+        "precision": 0.5703125,
+        "coverage": 0.47761194029850745,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 978,
+        "threshold": 0.5,
+        "precision": 0.47368421052631576,
+        "coverage": 0.5384615384615384,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 978,
+        "threshold": 0.6,
+        "precision": 0.5934065934065934,
+        "coverage": 0.3568627450980392,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 978,
+        "threshold": 0.52,
+        "precision": 0.512,
+        "coverage": 0.5341880341880342,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5423424111206011
+  },
+  {
+    "transform_name": "avg_all_plus_trend",
+    "transforms": [
+      "avg_all",
+      "trend"
+    ],
+    "representation": "raw_dual",
+    "n_features": 660,
+    "pooled": {
+      "threshold": 0.6,
+      "precision": 0.5043103448275862,
+      "coverage": 0.32289491997216424,
+      "met_floor": true
+    },
+    "per_fold": [
+      {
+        "val_season": 2018,
+        "n_features": 660,
+        "threshold": 0.6,
+        "precision": 0.547945205479452,
+        "coverage": 0.3029045643153527,
+        "met_floor": true
+      },
+      {
+        "val_season": 2019,
+        "n_features": 660,
+        "threshold": 0.56,
+        "precision": 0.4657534246575342,
+        "coverage": 0.3802083333333333,
+        "met_floor": true
+      },
+      {
+        "val_season": 2021,
+        "n_features": 660,
+        "threshold": 0.62,
+        "precision": 0.5757575757575758,
+        "coverage": 0.2462686567164179,
+        "met_floor": true
+      },
+      {
+        "val_season": 2022,
+        "n_features": 660,
+        "threshold": 0.5,
+        "precision": 0.5068493150684932,
+        "coverage": 0.5910931174089069,
+        "met_floor": true
+      },
+      {
+        "val_season": 2023,
+        "n_features": 660,
+        "threshold": 0.6,
+        "precision": 0.5529411764705883,
+        "coverage": 0.3333333333333333,
+        "met_floor": true
+      },
+      {
+        "val_season": 2024,
+        "n_features": 660,
+        "threshold": 0.55,
+        "precision": 0.46296296296296297,
+        "coverage": 0.46153846153846156,
+        "met_floor": true
+      }
+    ],
+    "mean_fold_precision": 0.5187016100661009
+  }
+]

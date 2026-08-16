@@ -1,0 +1,51 @@
+# Per-category feature-module toggles.
+feature_groups:
+  prior_performance: true
+  returning_production: true
+  talent_recruiting: true
+  roster_turnover: true
+  coaching: true
+  schedule: true
+  program_history: true
+
+# Season-aware Power-conference mapping. This is a hardcoded assumption (no conference-tier
+# table exists in the DB) -- documented in docs/assumptions_and_limitations.md. Conferences
+# not listed for a given season are treated as Group-of-5 / non-power.
+power_conferences:
+  default: ["ACC", "Big Ten", "Big 12", "SEC", "Pac-12"]   # pre-2024 realignment
+  by_season:
+    2024: ["ACC", "Big Ten", "Big 12", "SEC"]
+    2025: ["ACC", "Big Ten", "Big 12", "SEC"]
+  # FBS Independents is otherwise treated as a G5-tier label; Notre Dame is the one
+  # independent whose on-field profile is power-conference-caliber.
+  independent_overrides:
+    power: ["Notre Dame"]
+
+# coaches.preseason_rank is 0% populated for the 2025 demo target season (verified) and only
+# ~20% populated even historically -- excluded by default. Flip to true once/if the ingestion
+# pipeline backfills it closer to a real target season's kickoff.
+use_coach_preseason_rank: false
+
+rolling_windows: [2, 3, 5]
+
+winsorize_limits:
+  # returning_production percent_* columns are unbounded ratios of a small-sample denominator
+  # (verified: percent_passing_ppa can hit -129.5). Legitimate values are conceptually 0-1-ish
+  # fractions; clip to [-3, 3] to kill artifacts while keeping real variation.
+  percent_ppa_columns: [-3.0, 3.0]
+
+# EPA threshold used by prior_performance.py to define an "explosive" play. Config-tunable
+# judgment call, not verified against an external convention.
+explosiveness_epa_threshold: 1.0
+
+# Week cutoffs used by schedule.py to split early- vs late-season difficulty.
+early_season_max_week: 6
+late_season_min_week: 9
+
+# QB / OL / DL position-code groupings, verified live against
+# `SELECT DISTINCT position FROM recruiting_players` -- CFBD's recruiting taxonomy splits QBs
+# into PRO (pro-style) and DUAL (dual-threat) rather than a single QB code.
+positional_talent_groups:
+  qb: ["QB", "PRO", "DUAL"]
+  ol: ["OT", "OG", "IOL", "OC"]
+  dl: ["DT", "DL", "SDE", "WDE", "EDGE"]

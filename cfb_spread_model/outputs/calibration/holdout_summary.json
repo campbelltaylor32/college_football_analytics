@@ -1,0 +1,16 @@
+{
+  "n_buckets": 5,
+  "overall_base_rate": 0.4930232558139535,
+  "top_bucket_n": 43,
+  "top_bucket_mean_predicted": 0.6330888091344206,
+  "top_bucket_actual_rate": 0.5581395348837209,
+  "top_bucket_lift_vs_base_rate": 0.06511627906976741,
+  "bottom_bucket_n": 43,
+  "bottom_bucket_mean_predicted": 0.39088596291986094,
+  "bottom_bucket_actual_cover_rate": 0.5116279069767442,
+  "bottom_bucket_other_side_rate": 0.4883720930232558,
+  "bottom_bucket_other_side_lift_vs_base_rate": -0.018604651162790642,
+  "monotonicity": 0.0,
+  "model_name": "logistic_regression",
+  "view": "final_holdout_2025"
+}

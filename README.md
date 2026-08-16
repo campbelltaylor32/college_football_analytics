@@ -16,32 +16,30 @@ The final model achieves 57% precision in predicting home team covers.
 
 ## Repository Structure
 
-### Data Preparation & Feature Engineering
-- Full_CFB_Game_Outcome_Historical.R  
-  - Generates predictors from raw data  
-  - Engineers moving averages & rolling statistics  
-  - Cleans and formats gambling dataset  
-  - Defines cover/push outcome logic  
+### `Data/`
+Single canonical folder for all CSV inputs and outputs: historical training data (`CFB_Gambling_Results.csv`, `CFB_Team_Talent_Data.csv`, `Coaches_Winning_CFB.csv`, `Game_Stats_Averages_CFB_PBP_Added.csv`, `Returning_Production_CFB.csv`, `CFB_Gambling_Predictors_Final(_PBP).csv`), the 2025-season weekly series (`*_2025_N.csv` / `*_2025_WeekN.csv`), and weekly prediction outputs (`CFB_Pred_Week_N.csv`). All scripts read/write here — there should be no loose data CSVs at the repo root.
 
-- Merge_Predictors_CFB_Historical.R  
-  - Combines predictors into a unified, ready-to-use dataset  
+### `R Scripts/`
+- `Full_CFB_Game_Outcome_Historical.R` — pulls raw historical data, engineers moving averages & rolling statistics, defines the cover/push outcome logic, writes to `Data/`
+- `Merge_Predictors_CFB_Historical.R` — combines historical predictors into `Data/CFB_Gambling_Predictors_Final_PBP.csv`
+- `2025_Game_Update.R` — pulls/refreshes 2025-season gambling spreads and game stats weekly, writes to `Data/`
+- `2025_Pred_Update.R` — updates predictors and produces the current week's predictions, writes to `Data/`
 
-### Seasonal Updates
-- 2025_Pred_Update.R 
-  - Updates predictors weekly during the 2025 season  
+### `Python Scripts/`
+- `CFB_Gambling_Model.ipynb` — trains classification models, tunes hyperparameters, saves the final trained model
+- `Week_Predictions.ipynb` — applies the trained model to 2025 games, produces weekly cover predictions
 
-- 2025_Game_Update.R  
-  - Pulls and refreshes gambling spreads for the 2025 season  
+### `cfb_spread_framework.py`
+Standalone feature-selection & model-training framework (reads `Data/CFB_Gambling_Predictors_Final_PBP.csv`, writes to `model_artifacts/`). Outputs from k-sweep runs live in `model_artifacts_sweep/`.
 
-### Modeling & Predictions
-- CFB_Gambling_Model.ipynb  
-  - Trains classification models  
-  - Performs hyperparameter tuning  
-  - Saves the final trained model  
+### `Dashboard/`
+Streamlit app (`app.py`, `utils.py`) for browsing weekly team stats; reads from `Data/`.
 
-- Week_Predictions.ipynb  
-  - Applies the trained model to 2025 games  
-  - Produces weekly cover predictions  
+### `Model Information/`
+Earlier (Aug/Sep 2025) trained model artifacts, kept for reference alongside the newer `model_artifacts/` outputs.
+
+### `Modeling/`
+Feature-search intermediate outputs (`output_feature_search/`).
 
 ---
 

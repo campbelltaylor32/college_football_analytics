@@ -1,0 +1,8 @@
+# Connection details are pulled from environment variables (see .env.example).
+# Values below are the literal ${VAR} tokens resolved at load time by
+# src/cfb_win_total_model/config.py — never hardcode real credentials here.
+host: ${CFB_DB_HOST}
+port: ${CFB_DB_PORT}
+user: ${CFB_DB_USER}
+password: ${CFB_DB_PASSWORD}
+database: ${CFB_DB_NAME}

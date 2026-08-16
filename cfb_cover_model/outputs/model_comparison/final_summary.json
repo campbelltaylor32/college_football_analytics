@@ -1,0 +1,29 @@
+{
+  "winning_feature_config": {
+    "transform_name": "all_three",
+    "transforms": [
+      "prev_week",
+      "avg_all",
+      "avg3"
+    ],
+    "representation": "differential",
+    "n_features_after_transform_representation": 491,
+    "best_reduction_strategy": "reduced",
+    "reduction_strategy_ranking": [
+      "reduced",
+      "deterministic_pruned_only",
+      "pca_reduced"
+    ]
+  },
+  "walk_forward_selected_model": "logistic_regression",
+  "walk_forward_precision": 0.5396039603960396,
+  "walk_forward_coverage": 0.28114126652748783,
+  "holdout_precision": 0.5357142857142857,
+  "holdout_coverage": 0.26046511627906976,
+  "holdout_rank_of_walk_forward_winner": 9,
+  "n_candidates_compared": 14,
+  "target_precision": 0.53,
+  "meets_target_on_holdout": true,
+  "best_holdout_model": "lightgbm",
+  "best_holdout_precision": 0.6060606060606061
+}

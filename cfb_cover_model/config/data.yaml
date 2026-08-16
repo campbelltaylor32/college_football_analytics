@@ -1,0 +1,75 @@
+# Data-layer configuration for cfb_cover_model.
+#
+# Column-name patterns below are expanded programmatically in src/cfb_cover_model/data.py
+# against home_/away_ prefixes and the three temporal-transform suffixes
+# (prev_week_<stat>, <stat>_avg_all, <stat>_avg3) — they are base stat names, not full
+# column names.
+
+paths:
+  predictors_csv: "../Data/CFB_Gambling_Predictors_Final_PBP.csv"
+  results_csv: "../Data/CFB_Gambling_Results.csv"
+  week_predictors_glob: "../Data/CFB_Pred_Week_*.csv"
+
+seasons:
+  # 2020 was COVID-shortened (91 games vs. ~700+ in a normal season) - same exclusion
+  # rationale as the sibling cfb_win_total_model project.
+  exclude: [2020]
+  # Never touched by feature selection, model selection, or threshold tuning until the
+  # single final evaluation pass.
+  final_holdout: [2025]
+
+id_columns:
+  # Dropped from the candidate feature set entirely - identifiers, not predictors.
+  - game_id
+  - home_team
+  - away_team
+
+leakage_adjacent_columns:
+  # home_favored is redundant with spread's sign and is used to help construct the
+  # push/cover_margin logic in targets.py - excluded from the model's own feature set to
+  # avoid it acting as a near-direct proxy for the label-construction process.
+  - home_favored
+
+label_column: home_covered
+
+# Confirmed via direct R-script/CSV inspection: a duplicate-key bug in the upstream
+# offense_epa/defense_epa summarise() blocks means the *_EPA_per_Run columns actually
+# contain pass-play EPA (the true per-run EPA was computed first, then silently
+# overwritten by a second assignment meant to produce *_EPA_per_Pass, which itself never
+# made it into the final CSV). Excluded by name rather than silently trained on.
+#
+# *_EPA_per_Pass itself is NOT bad data - src/cfb_cover_model/ingest/pbp_features.py
+# (the direct-API live pipeline, see docs/api_ingestion.md) computes it correctly and
+# deliberately does not reproduce the bug above. It's excluded here only because it never
+# existed in the R-generated historical CSV the deployed model was trained on - the live
+# pipeline would otherwise hand the model a column it's never seen a coefficient/split for.
+# Safe to remove from this list (and retrain) once EPA_per_Pass is intentionally added to
+# the historical feature set.
+known_bad_base_stats:
+  - Offense_EPA_per_Run
+  - Defense_EPA_per_Run
+  - Offense_EPA_per_Pass
+  - Defense_EPA_per_Pass
+
+# Base stats that are exact linear/ratio functions of other raw base stats retained in
+# the same table (verified against the R merge script). Kept once, not twice, to avoid
+# handing deterministic multicollinearity to every downstream model before feature
+# selection even runs. Correlation-cluster pruning (stage 3) is a safety net for any
+# redundancy not captured by this explicit list.
+deterministic_redundant_base_stats:
+  - point_differential          # = points - points_allowed
+  - turnover_margin             # = turnovers - turnovers_allowed
+  - penalty_yard_margin         # = penalty_yards - penalty_yards_allowed
+  - possession_time_difference  # = possession_time - possession_time_allowed
+  - rush_percentage             # = rushing_attempts / total_plays
+  - rush_percentage_against     # = rushing_attempts_allowed / total_plays_against
+  - yards_per_play               # = total_yards / total_plays
+  - yards_per_play_allowed       # = total_yards_allowed / total_plays_against
+  - third_down_percentage_offense  # = third_down_conversion / third_down_attempts
+  - Offense_EPA_per_Play         # = Total_Offense_EPA / Total_Offense_Plays
+  - Defense_EPA_per_Play         # = Total_Defense_EPA / Total_Defense_Plays
+
+# Rows still missing a value after all lags/exclusions are dropped (na.omit() semantics
+# carried over from the R layer) - this is inherited, not re-derived, so it's documented
+# here rather than silently re-applied with different behavior.
+drop_rows_with_any_na: true

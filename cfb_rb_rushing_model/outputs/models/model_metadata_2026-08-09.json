@@ -1,0 +1,35 @@
+{
+  "model_name": "ols",
+  "model_type": "sklearn_pipeline",
+  "trained_on_seasons": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "final_holdout_season": 2025,
+  "final_holdout_metrics": {
+    "n": 1270,
+    "mae": 32.84685602267485,
+    "rmse": 42.34547680617244,
+    "median_ae": 26.698939161602063,
+    "r2": 0.09540523185100924,
+    "mean_bias": -2.016585966204222,
+    "pct_within_10": 0.17559055118110237,
+    "pct_within_20": 0.38346456692913383
+  },
+  "prediction_interval_method": "oof_residual_quantiles",
+  "prediction_interval_levels": [
+    0.1,
+    0.9
+  ],
+  "clip_min_yards": 0,
+  "n_oof_residuals": 9734,
+  "trained_date": "2026-08-09"
+}

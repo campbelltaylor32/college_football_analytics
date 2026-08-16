@@ -4,13 +4,12 @@ require(data.table)
 
 
 ### Load in Key
-Sys.setenv(CFBD_API_KEY = "+7pFEyFsISDn4fKPCGPyI9K/7tylHLRlY1bqQbT9QFHE2t7h0e9J1k47PMOGWDll")
 Sys.getenv(
   "CFBD_API_KEY"
 )
 
 ### Get Full Games ###
-years_download <- seq(2013,2024)
+years_download <- seq(2013,2025)
 weeks <- seq(1,12)
 
 tot_games <- data.frame()
@@ -40,8 +39,8 @@ tot_games <- tot_games %>%
   select(
     game_id, season, week, season_type, start_date,
     neutral_site, conference_game,venue_id, 
-    home_id, home_team, home_classification, home_conference, 
-    home_points, away_id, away_team, away_classification, away_conference,
+    home_id, home_team, home_conference, 
+    home_points, away_id, away_team, away_conference,
     away_points
   ) %>% 
   arrange(season, week)
@@ -55,6 +54,7 @@ for(i in seq_along(years_download)){
   print(paste0("Season: ", years_download[i], "..."))
   for(j in seq_along(weeks)){
     print(paste0("Week ", weeks[j], "..."))
+    Sys.sleep(1)
     tmp_betting <- cfbd_betting_lines(year = years_download[i], week = weeks[j])
     tot_betting <- rbind(tot_betting, tmp_betting)
   }
@@ -94,7 +94,6 @@ nrow(tot_betting_final) == as.numeric(tot_betting %>% summarise(n_distinct(game_
 
 
 ### Merge Together ###
-
 fin_data <- merge(tot_games, tot_betting_final, by = c("game_id","home_team", "away_team"))
 
 fin_data <- fin_data %>%
@@ -131,13 +130,10 @@ fin_data <- fin_data %>%
 ### Check Distribution of Home Covered - Expect close to 50/50
 
 ### Write Gambling Results 
+getwd()
+
 fin_data %>%
-  write.csv(file = "CFB_Gambling_Results.csv", row.names = FALSE)
-
-
-fin_data <- fread("CFB_Gambling_Results.csv")
-
-
+  write.csv(file = "Data/CFB_Gambling_Results.csv", row.names = FALSE)
 
 ### Get Talent 
 tot_talent <- data.frame()
@@ -155,13 +151,12 @@ for(i in seq_along(years_download)){
   print(i)
 }
 
-tot_talent
 
 ### Get Recruits ###
 tot_recruits <- data.frame()
 tmp_recruits <- data.frame()
 
-years_download <- seq(2009,2024)
+years_download <- seq(2009,2025)
 
 for(i in seq_along(years_download)){
   tmp_recruits <- cfbd_recruiting_player(year = years_download[i])
@@ -187,7 +182,7 @@ names(tot_recruits)[5] <- "recruit_year"
 tot_roster <- data.frame()
 tmp_roster <- data.frame()
 
-years_download <- seq(2013,2024)
+years_download <- seq(2013,2025)
 
 for(i in seq_along(years_download)){
   tmp_roster <- cfbd_team_roster(year = years_download[i])
@@ -204,7 +199,7 @@ for(i in seq_along(years_download)){
 
 tot_roster <- tot_roster %>% 
   select(
-    athlete_id, firstName,lastName, team, year, position, season
+    athlete_id, first_name,last_name, team, year, position, season
   )
 names(tot_roster)[5] <- "class"
 names(tot_roster)[7] <- "year"
@@ -222,14 +217,16 @@ blue_chip_ratio <- all_roster_recruit %>%
   ) %>% 
   ungroup()
 
+names(tot_talent)[2] <- "team"
 ### May need to Remove Avg Player Rating
 tot_talent_full <- merge(tot_talent, blue_chip_ratio, by = c("year", "team"), all.x = TRUE)
 tot_talent_full <- as.data.frame(tot_talent_full)
 tot_talent_full[is.na(tot_talent_full)] <- 0
 
+
 tot_talent_full %>% 
   write.csv(
-    file = "CFB_Team_Talent_Data.csv", row.names = FALSE
+    file = "Data/CFB_Team_Talent_Data.csv", row.names = FALSE
   )
 
 
@@ -237,7 +234,7 @@ tot_talent_full %>%
 tot_coaches <- data.frame()
 tmp_coaches <- data.frame()
 
-years_download <- seq(2004,2024)
+years_download <- seq(2004,2025)
 
 for(i in seq_along(years_download)){
   tmp_coaches <- cfbd_coaches(year = years_download[i])
@@ -245,7 +242,7 @@ for(i in seq_along(years_download)){
   if(nrow(tmp_coaches) > 0){
     tmp_coaches <- tmp_coaches %>% 
       mutate(
-        Name = paste0(firstName,' ',lastName)
+        Name = paste0(first_name,' ',last_name)
       ) %>%
       select(Name,team = school, year, games, wins, losses) 
     tot_coaches <- rbind(tot_coaches, tmp_coaches)
@@ -270,12 +267,12 @@ tot_coaches_stat <- tot_coaches %>%
   )
 
 tot_coaches_stat %>% 
-  write.csv(file = "Coaches_Winning_CFB.csv", row.names = FALSE)
+  write.csv(file = "Data/Coaches_Winning_CFB.csv", row.names = FALSE)
 ####
 
 
 ### Get Basic Game Stats ### 
-years_download <- seq(2015,2024)
+years_download <- seq(2015,2025)
 weeks <- seq(1,12)
 
 tot_stats <- data.frame()
@@ -285,6 +282,7 @@ for(i in seq_along(years_download)){
   print(paste0("Season: ", years_download[i], "..."))
   for(j in seq_along(weeks)){
     print(paste0("Week ", weeks[j], "..."))
+    Sys.sleep(.5)
     tmp_stats <- cfbd_game_team_stats(year = years_download[i], week = weeks[j])
     tmp_stats$week <- weeks[j]
     tmp_stats$year <- years_download[i] 
@@ -399,7 +397,7 @@ tot_stats <- tot_stats %>%
 
 
 ### Add Advanced ### 
-years_download <- seq(2015,2024)
+years_download <- seq(2015,2025)
 weeks <- seq(1,12)
 
 tot_epa <- data.frame()
@@ -409,6 +407,7 @@ for(i in seq_along(years_download)){
   print(paste0("Season: ", years_download[i], "..."))
   for(j in seq_along(weeks)){
     print(paste0("Week ", weeks[j], "..."))
+    Sys.sleep(.5)
     tmp_epa <- cfbd_pbp_data(year = years_download[i], week = weeks[j], epa_wpa = TRUE)
     tmp_epa$week <- weeks[j]
     tmp_epa$year <- years_download[i] 
@@ -615,13 +614,13 @@ tot_stats1 <- all_stats %>%
 
 tot_stats1 %>% 
   write.csv(
-    file = "Game_Stats_Averages_CFB_PBP_Added.csv", 
+    file = "Data/Game_Stats_Averages_CFB_PBP_Added.csv",
     row.names = FALSE
   )
 
 
 ### Returning Production ###
-years_download <- seq(2015,2024)
+years_download <- seq(2015,2025)
 
 tot_return <- data.frame()
 tmp_return <- data.frame()
@@ -635,7 +634,7 @@ for(i in seq_along(years_download)){
 
 tot_return %>% 
   write.csv(
-    file = "Returning_Production_CFB.csv", 
+    file = "Data/Returning_Production_CFB.csv",
     row.names = FALSE
   )
 

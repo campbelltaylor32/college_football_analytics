@@ -3,8 +3,8 @@ require(data.table)
 
 
 ### Aggregate All Data ###
-talent <- fread('CFB_Team_Talent_Data_2025.csv')
-coaches <- fread('Coaches_Winning_CFB_2025.csv')
+talent <- fread('Data/CFB_Team_Talent_Data_2025.csv')
+coaches <- fread('Data/Coaches_Winning_CFB_2025.csv')
 
 ### Coaching Stats Before the Year - No Lookahead Bias ##
 coaches <- coaches %>%
@@ -23,7 +23,7 @@ talent_coach <- merge(talent,coaches, by = c('year', 'team'), all = TRUE) %>%
 
 
 ### Returning Production 
-returning <- fread('Returning_Production_CFB_2025.csv')
+returning <- fread('Data/Returning_Production_CFB_2025.csv')
 names(returning)[1] <- "year"
 returning <- returning %>% 
   select(-conference)
@@ -33,7 +33,7 @@ talent_coach_ret <- merge(talent_coach, returning, by = c('year', 'team'), all =
 
 
 ### Load in Game Averages ###
-game_stats <- fread('Game_Stats_Averages_CFB_PBP_Added_2025.csv')
+game_stats <- fread('Data/Game_Stats_Averages_CFB_PBP_Added_2025_Week14.csv')
 
 
 tot_pred <- merge(game_stats, talent_coach_ret, by = c('team', 'year'))
@@ -56,13 +56,16 @@ tot_pred_lagged <- tot_pred %>%
     across(all_of(lag_cols), ~ dplyr::lag(.x, 1))
   ) %>%
   ungroup() %>%
-  filter(week == "3")
+  group_by(
+    team
+  ) %>% 
+  slice_max(week,n = 1)
 
 
 # Final Predictors per Team Heading into Week 
 total_pred_lagged1 <- tot_pred_lagged %>%
   ### Get Full 3 Game Moving Average 
-  filter(week >= as.numeric(3)) %>%
+  filter(week >= as.numeric(4)) %>%
   select(
     -c(home_away, Name, year, week, game_id)
   )
@@ -77,7 +80,7 @@ home_team_dat <- total_pred_lagged1 %>%
 
 
 ### Load in Game Results ### 
-full_outcome <- fread(file ="CFB_Gambling_Results_2025_4.csv")
+full_outcome <- fread(file ="Data/CFB_Gambling_Results_2025_14.csv")
 full_outcome1 <- full_outcome %>% 
   select(
     game_id, home_team, away_team,season,
@@ -87,7 +90,7 @@ full_outcome1 <- full_outcome %>%
   mutate(
     spread = abs(spread)
   ) %>% 
-  filter(week == 4)
+  filter(week == 14)
 
 home_full_outcome <- merge(full_outcome1, home_team_dat, by = c("home_team"))
 
@@ -99,11 +102,13 @@ away_team_dat <- total_pred_lagged1 %>%
 
 ### Final Dataframe
 total_outcome <- merge(home_full_outcome, away_team_dat, by = c("away_team"))
-week = 4
+total_outcome <- total_outcome %>% 
+  filter(is.na(home_covered))
+week = 14
 
 total_outcome %>%
   write.csv(
-    file = paste0("CFB_Pred_Week_",week,".csv"), row.names = FALSE
+    file = paste0("Data/CFB_Pred_Week_",week,".csv"), row.names = FALSE
   )
 
 

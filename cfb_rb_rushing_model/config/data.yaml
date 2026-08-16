@@ -1,0 +1,25 @@
+# Position scope for v1 -- running backs only (QB rushing explicitly deferred, see
+# docs/assumptions_and_limitations.md). team_rosters.position must equal one of these exactly;
+# players tagged ATH/FB with real rushing usage are excluded by design, not a bug.
+positions: [RB]
+
+# play_type values in `plays` that count as a rush attempt. Both are needed -- 'Rush' is the
+# ordinary carry, 'Rushing Touchdown' is cfbfastR's separate play_type for a rushing score.
+# Sacks are a distinct play_type with their own sack_player_name field and are never counted
+# here.
+rush_play_types: [Rush, "Rushing Touchdown"]
+
+# Name-resolution matching (player_resolution.py). Suffixes stripped during the normalized
+# fallback pass, case-insensitive.
+name_suffixes_to_strip: [jr, sr, ii, iii, iv, v]
+
+# Optional pre-game-known market context (spread/over_under from betting_lines). Off by
+# default -- a deliberate scope decision (see docs/assumptions_and_limitations.md item 4), not
+# an oversight. Toggle on to add these columns to game_context.py's output.
+include_betting_context: false
+
+# Verified live against cfb_football during planning (2026-08-09) -- see
+# docs/assumptions_and_limitations.md for the full investigation. A mismatch here means the
+# upstream ingestion cache changed and this project's season-boundary assumptions need
+# re-verification before trusting them.
+expected_min_rush_plays_with_name: 700000

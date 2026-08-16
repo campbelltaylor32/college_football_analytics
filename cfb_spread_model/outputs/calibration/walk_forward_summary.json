@@ -1,0 +1,16 @@
+{
+  "n_buckets": 10,
+  "overall_base_rate": 0.48384424192212094,
+  "top_bucket_n": 121,
+  "top_bucket_mean_predicted": 0.7230499539724111,
+  "top_bucket_actual_rate": 0.4380165289256198,
+  "top_bucket_lift_vs_base_rate": -0.045827712996501124,
+  "bottom_bucket_n": 121,
+  "bottom_bucket_mean_predicted": 0.2697378672169836,
+  "bottom_bucket_actual_cover_rate": 0.4793388429752066,
+  "bottom_bucket_other_side_rate": 0.5206611570247934,
+  "bottom_bucket_other_side_lift_vs_base_rate": 0.004505398946914374,
+  "monotonicity": 0.3939393939393939,
+  "model_name": "logistic_regression",
+  "view": "walk_forward_oof_pooled"
+}

@@ -1,0 +1,16 @@
+{
+  "transform_name": "all_three",
+  "transforms": [
+    "prev_week",
+    "avg_all",
+    "avg3"
+  ],
+  "representation": "differential",
+  "n_features_after_transform_representation": 491,
+  "best_reduction_strategy": "reduced",
+  "reduction_strategy_ranking": [
+    "reduced",
+    "deterministic_pruned_only",
+    "pca_reduced"
+  ]
+}

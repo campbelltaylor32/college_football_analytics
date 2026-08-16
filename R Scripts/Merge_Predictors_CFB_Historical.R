@@ -1,6 +1,7 @@
+
 require(tidyverse)
 require(data.table)
-
+setwd('Data/')
 
 ### Aggregate All Data ###
 talent <- fread('CFB_Team_Talent_Data.csv')
@@ -33,7 +34,6 @@ talent_coach_ret <- merge(talent_coach, returning, by = c('year', 'team'), all =
 
 
 ### Load in Game Averages ###
-
 game_stats <- fread('Game_Stats_Averages_CFB_PBP_Added.csv')
 
 

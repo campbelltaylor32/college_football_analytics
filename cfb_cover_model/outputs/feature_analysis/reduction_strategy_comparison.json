@@ -1,0 +1,32 @@
+[
+  {
+    "feature_set_mode": "reduced",
+    "mean_n_features": 38.166666666666664,
+    "pooled": {
+      "threshold": 0.5,
+      "precision": 0.5414110429447853,
+      "coverage": 0.453723034098817,
+      "met_floor": true
+    }
+  },
+  {
+    "feature_set_mode": "deterministic_pruned_only",
+    "mean_n_features": 491.0,
+    "pooled": {
+      "threshold": 0.7,
+      "precision": 0.5255474452554745,
+      "coverage": 0.2860125260960334,
+      "met_floor": true
+    }
+  },
+  {
+    "feature_set_mode": "pca_reduced",
+    "mean_n_features": 281.8333333333333,
+    "pooled": {
+      "threshold": 0.7,
+      "precision": 0.5247252747252747,
+      "coverage": 0.2533054975643702,
+      "met_floor": true
+    }
+  }
+]

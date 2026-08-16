@@ -1,0 +1,1 @@
+This project's actual pipeline logic lives in scripts/ + src/cfb_cover_model/, run via scripts/run_pipeline.py; see docs/project_story.md for results. No exploratory notebooks were needed beyond that - kept as an empty placeholder for consistency with the sibling projects' structure.

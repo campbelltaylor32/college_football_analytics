@@ -1,0 +1,10 @@
+{
+  "script": "compute_compression_diagnostics.py",
+  "git_sha": "a851c86da49b88d66ec454e705d487586a16f949",
+  "timestamp": "2026-08-04T01:31:31.894802+00:00",
+  "inputs": {
+    "/Users/campbelltaylor/Projects/CFB_Projects/College_Football_Gambling_Model/cfb_win_total_model/outputs/model_comparison/oof_predictions.csv": 1785803833.3314853,
+    "/Users/campbelltaylor/Projects/CFB_Projects/College_Football_Gambling_Model/cfb_win_total_model/outputs/model_comparison/holdout_2025_predictions.csv": 1785806402.4505482,
+    "/Users/campbelltaylor/Projects/CFB_Projects/College_Football_Gambling_Model/cfb_win_total_model/data/processed/modeling_dataset.parquet": 1785802281.427722
+  }
+}

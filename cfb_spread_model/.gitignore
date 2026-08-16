@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.python-version
+
+# Data (cached copy of the repo-level Data/ CSV, regenerable, not tracked)
+data/interim/*
+data/processed/*
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+
+# Model artifacts (large binaries)
+outputs/models/*.joblib
+outputs/models/*.pkl
+!outputs/models/.gitkeep
+
+# CatBoost training-log directory, written next to the CWD regardless of verbose=False
+catboost_info/
+
+# OS / editor
+.DS_Store
+.ipynb_checkpoints/

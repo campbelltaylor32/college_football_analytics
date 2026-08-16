@@ -1,0 +1,1 @@
+no production model saved - see docs/project_story.md 'What actually shipped': the walk-forward-selected model did not beat the target on true holdout, so no single model was promoted to a persisted production artifact. generate_week_predictions.py refits the chosen model on the fly from outputs/threshold_selection/chosen_threshold_per_model.csv + config, given how cheap that is.
