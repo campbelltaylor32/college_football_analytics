@@ -1,0 +1,73 @@
+{
+  "model_name": "ridge",
+  "feature_columns": [
+    "talent_composite",
+    "blue_chip_ratio",
+    "n_matched_recruits",
+    "avg_recruit_rating",
+    "total_ppa",
+    "percent_ppa",
+    "percent_passing_ppa",
+    "percent_receiving_ppa",
+    "percent_rushing_ppa",
+    "usage_pct",
+    "transfers_in",
+    "transfers_out",
+    "net_transfer_rating",
+    "coach_tenure_years",
+    "coach_career_win_pct_prior",
+    "coaching_change",
+    "srs_lag1",
+    "srs_lag2",
+    "srs_lag3",
+    "srs_trailing_mean",
+    "pythagorean_win_pct_lag1",
+    "win_pct_over_pythagorean_lag1"
+  ],
+  "pooled_walk_forward_mae": {
+    "ridge": 6.4119656746730955,
+    "xgboost": 6.659879878039746,
+    "gradient_boosting": 6.803432070982765,
+    "prev_season_srs": 7.948839128069985,
+    "overall_mean": 10.229929273649896
+  },
+  "consensus_spread_checks": [
+    {
+      "season": 2021,
+      "n_games": 732,
+      "mae": 6.65368675539359,
+      "correlation": 0.8070708401846421
+    },
+    {
+      "season": 2022,
+      "n_games": 734,
+      "mae": 6.5159419497326585,
+      "correlation": 0.80958918166723
+    },
+    {
+      "season": 2023,
+      "n_games": 750,
+      "mae": 5.769103134567164,
+      "correlation": 0.8445072201065982
+    },
+    {
+      "season": 2024,
+      "n_games": 751,
+      "mae": 6.968409707046986,
+      "correlation": 0.742202608205654
+    }
+  ],
+  "hfa": 4.330154153266053,
+  "training_seasons": [
+    2016,
+    2017,
+    2018,
+    2019,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "training_row_count": 1182
+}

@@ -13,10 +13,30 @@ require(RMariaDB)
 #   mysql -u root -e "CREATE DATABASE IF NOT EXISTS cfb_football;"
 #   mysql -u root cfb_football < "SQL Scripts/schema.sql"
 
-Sys.getenv("CFBD_API_KEY")
+# Load CFBD_API_KEY from the repo root's .env, searching upward from the working directory
+# (not commandArgs()'s --file= path -- that mangles paths with spaces, like "SQL Scripts/",
+# in some invocation contexts). `Sys.getenv("CFBD_API_KEY")` alone -- the prior form of this
+# line -- reads and discards the value; it never actually puts the key where cfbfastR's own
+# internal Sys.getenv() calls can see it, which silently made every cfbd_*() call below fail.
+find_env_file <- function() {
+  dir <- getwd()
+  for (i in 1:5) {
+    candidate <- file.path(dir, ".env")
+    if (file.exists(candidate)) return(candidate)
+    dir <- dirname(dir)
+  }
+  NULL
+}
+env_file <- find_env_file()
+if (!is.null(env_file)) readRenviron(env_file)
+if (Sys.getenv("CFBD_API_KEY") == "") {
+  stop("CFBD_API_KEY not found -- expected it in the repo root's .env (see .env.example). Run this script from the repo root.")
+}
 
-CURRENT_SEASON <- 2025
-CURRENT_WEEK   <- 14   # bump weekly during the season
+CURRENT_SEASON <- 2026
+CURRENT_WEEK   <- 0   # no 2026 games/lines exist yet; 0 skips those endpoints for this season
+                      # entirely (WEEKS[WEEKS <= 0] is empty) rather than requesting a
+                      # not-yet-played week, which the API/retry-backoff handled very slowly
 WEEKS          <- 1:15
 
 # earliest year each endpoint actually has data, per live probe against the

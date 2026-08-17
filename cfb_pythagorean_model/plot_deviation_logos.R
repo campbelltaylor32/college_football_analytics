@@ -9,12 +9,27 @@ require(cfbfastR)
 library(ggimage)
 library(scales)
 
-Sys.getenv("CFBD_API_KEY")
-
 script_args <- commandArgs(trailingOnly = FALSE)
 script_path <- sub("--file=", "", script_args[grep("--file=", script_args)])
 script_dir <- dirname(script_path)
 outputs_dir <- file.path(script_dir, "outputs")
+
+# Searches upward from the working directory (not the commandArgs()-derived script_dir above --
+# that path can get mangled with spaces in some invocation contexts, e.g. "SQL Scripts/").
+find_env_file <- function() {
+  dir <- getwd()
+  for (i in 1:5) {
+    candidate <- file.path(dir, ".env")
+    if (file.exists(candidate)) return(candidate)
+    dir <- dirname(dir)
+  }
+  NULL
+}
+env_file <- find_env_file()
+if (!is.null(env_file)) readRenviron(env_file)
+if (Sys.getenv("CFBD_API_KEY") == "") {
+  stop("CFBD_API_KEY not found -- expected it in the repo root's .env (see ../.env.example). Run this script from the repo root.")
+}
 
 deviation <- read.csv(file.path(outputs_dir, "deviation_top_bottom_10.csv"))
 

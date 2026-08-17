@@ -1,0 +1,39 @@
+# Per-category preseason feature-module toggles. Unlike cfb_win_total_model, there is no
+# schedule.py category here -- a power rating shouldn't depend on a team's own schedule
+# (that's exactly what opponent-adjustment in srs.py already handles), so it's deliberately
+# omitted rather than ported.
+feature_groups:
+  talent_recruiting: true
+  returning_production: true
+  roster_turnover: true
+  coaching: true
+  program_history: true
+
+# Corrected blue-chip ratio (see docs/methodology.md and
+# cfb_talent_distribution/build_corrected_blue_chip_ratio.R, which this ports the join-fix
+# from): team-seasons with fewer than this many matched (athlete_id- or recruit_ids-resolved)
+# recruits are low-confidence and dropped from the blue-chip-ratio feature (still keep the
+# raw talent-composite feature for those rows) -- same threshold cfb_talent_distribution
+# verified by inspection.
+min_matched_recruits_for_blue_chip_ratio: 20
+
+# cfbd_recruiting_transfer_portal has 0 rows before 2021 (verified in
+# cfb_transfer_portal_flow) -- roster_turnover.py falls back to roster-set-diff inference for
+# seasons before this.
+transfer_portal_start_season: 2021
+
+# program_history.py: how many trailing seasons of a team's own actual SRS to average into
+# the "recent history" feature. Reported individually (srs_lag1, srs_lag2, srs_lag3) as well
+# as this rolling mean, so the model can weight recency itself rather than only seeing a
+# pre-averaged blend.
+program_history_trailing_seasons: 3
+
+# roster_experience.py: team_rosters.year (eligibility class) is significantly corrupted for
+# older seasons (verified live: 81.5% of 2015 rows have year == season itself, improving to 0%
+# by 2026) -- team-seasons with fewer than this many valid (1-6, not season-matching) class
+# rows get class_avg=NaN rather than a garbage average.
+min_valid_class_rows: 15
+
+# How many seasons back to look when counting a player's prior appearances in team_rosters
+# (the year-independent tenure/experience signal -- see roster_experience.py).
+tenure_lookback_seasons: 5

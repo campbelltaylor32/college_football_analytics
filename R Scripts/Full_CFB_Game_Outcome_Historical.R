@@ -4,9 +4,22 @@ require(data.table)
 
 
 ### Load in Key
-Sys.getenv(
-  "CFBD_API_KEY"
-)
+# Searches upward from the working directory (not commandArgs()'s --file= path -- that
+# mangles paths with spaces, like "R Scripts/", in some invocation contexts).
+find_env_file <- function() {
+  dir <- getwd()
+  for (i in 1:5) {
+    candidate <- file.path(dir, ".env")
+    if (file.exists(candidate)) return(candidate)
+    dir <- dirname(dir)
+  }
+  NULL
+}
+env_file <- find_env_file()
+if (!is.null(env_file)) readRenviron(env_file)
+if (Sys.getenv("CFBD_API_KEY") == "") {
+  stop("CFBD_API_KEY not found -- expected it in the repo root's .env (see .env.example). Run this script from the repo root.")
+}
 
 ### Get Full Games ###
 years_download <- seq(2013,2025)

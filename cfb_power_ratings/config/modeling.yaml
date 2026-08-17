@@ -1,0 +1,43 @@
+# Season boundaries, grounded in verified DB coverage (games/plays start 2013, team_talent
+# starts 2015 -- see docs/assumptions_and_limitations.md). The historical SRS target
+# (srs.py::build_historical_srs_table) can be computed back to 2013 since it only needs
+# `games`, but the preseason feature set needs both season-t talent (>=2015) AND
+# `program_history_trailing_seasons` (3) years of prior actual SRS, which pushes the first
+# season with a fully-populated feature row to 2016 (SRS(2015)/(2014)/(2013) all computable).
+srs_history_start_season: 2013
+full_feature_start_season: 2016
+
+# 2020 is COVID-shortened -- excluded from training/validation, same convention as every
+# sibling project.
+excluded_seasons: [2020]
+
+min_train_seasons: 4
+first_validation_season: 2021
+walk_forward_validation_seasons: [2021, 2022, 2023, 2024]
+final_holdout_season: 2025
+
+random_seed: 42
+
+candidate_models:
+  - overall_mean          # baseline: predict league-average SRS (0) every time
+  - prev_season_srs       # baseline: predict last season's actual SRS unchanged
+  - ridge
+  - gradient_boosting
+  - xgboost                # only used if the `boosting` extra is installed
+
+# --- SRS / rating-engine parameters (srs.py, rating_engine.py) ---
+srs:
+  iterations: 200
+  non_fbs_pool_name: "generic_low_major"
+  # Home-field advantage is estimated live from data by default
+  # (srs.estimate_home_field_advantage) -- this override exists only for tests/reproducing a
+  # specific historical run without re-querying the DB.
+  hfa_override: null
+
+rating_engine:
+  # Each team's preseason prior counts as this many "phantom games" against a league-average
+  # opponent in the in-season blended update (rating_engine.py::update_ratings) -- roughly
+  # fully faded out by week 8-10 at ~1 game/week. Not rigorously tuned; see
+  # scripts/backtest_season.py's sensitivity sweep and docs/assumptions_and_limitations.md.
+  default_phantom_games: 5
+  phantom_games_sweep: [3, 5, 8]

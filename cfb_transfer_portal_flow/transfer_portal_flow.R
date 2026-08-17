@@ -25,13 +25,28 @@ library(tidyverse)
 library(cfbfastR)
 library(scales)
 
-Sys.setenv(CFBD_API_KEY = Sys.getenv("CFBD_API_KEY"))
-
 script_args <- commandArgs(trailingOnly = FALSE)
 script_path <- sub("--file=", "", script_args[grep("--file=", script_args)])
 script_dir <- if (length(script_path) > 0) normalizePath(dirname(script_path)) else getwd()
 outputs_dir <- file.path(script_dir, "outputs")
 dir.create(outputs_dir, showWarnings = FALSE)
+
+# Searches upward from the working directory (not the commandArgs()-derived script_dir above --
+# that path can get mangled with spaces in some invocation contexts, e.g. "SQL Scripts/").
+find_env_file <- function() {
+  dir <- getwd()
+  for (i in 1:5) {
+    candidate <- file.path(dir, ".env")
+    if (file.exists(candidate)) return(candidate)
+    dir <- dirname(dir)
+  }
+  NULL
+}
+env_file <- find_env_file()
+if (!is.null(env_file)) readRenviron(env_file)
+if (Sys.getenv("CFBD_API_KEY") == "") {
+  stop("CFBD_API_KEY not found -- expected it in the repo root's .env (see ../.env.example). Run this script from the repo root.")
+}
 
 years <- 2021:2025
 NON_FBS <- "Non-FBS/Other"
