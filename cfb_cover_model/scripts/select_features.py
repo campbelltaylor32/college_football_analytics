@@ -19,6 +19,7 @@ from sklearn.preprocessing import StandardScaler
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from cfb_cover_model import experiment_paths
 from cfb_cover_model.config import load_data_config, load_features_config, load_modeling_config
 from cfb_cover_model.feature_engineering import apply_home_away_representation, build_transform_variant
 from cfb_cover_model.feature_selection.selection import apply_feature_set, fit_feature_set
@@ -26,9 +27,11 @@ from cfb_cover_model.feature_selection.transform_ablation import run_transform_a
 from cfb_cover_model.modeling.evaluation import best_precision_at_coverage_floor
 from cfb_cover_model.modeling.splits import get_holdout_split, walk_forward_folds
 
-DATASET_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "modeling_dataset.parquet"
-FEATURE_COLUMNS_PATH = Path(__file__).resolve().parents[1] / "outputs" / "data_inventory" / "feature_columns.json"
-OUT_DIR = Path(__file__).resolve().parents[1] / "outputs" / "feature_analysis"
+# Set CFB_EXPERIMENT=<tag> to read/write an isolated dataset + outputs/experiments/<tag>/
+# subtree instead of the shared default paths - see src/cfb_cover_model/experiment_paths.py.
+DATASET_PATH = experiment_paths.dataset_path()
+FEATURE_COLUMNS_PATH = experiment_paths.output_path("data_inventory", "feature_columns.json")
+OUT_DIR = experiment_paths.output_path("feature_analysis")
 
 
 def compare_reduction_strategies(

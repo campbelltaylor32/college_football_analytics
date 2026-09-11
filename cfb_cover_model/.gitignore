@@ -11,3 +11,19 @@ data/raw/
 catboost_info/
 !data/interim/.gitkeep
 !data/processed/.gitkeep
+
+# Trained production artifacts (retrained weekly, tied to library versions at train time -
+# not meant to be committed) and monitoring reports (regenerated weekly).
+outputs/models/production/*
+!outputs/models/production/.gitkeep
+outputs/monitoring/*
+!outputs/monitoring/.gitkeep
+!outputs/monitoring/data_drift/.gitkeep
+!outputs/monitoring/prediction_drift/.gitkeep
+
+# Serving/scheduler env
+.env
+
+# Weekly job logs (run_weekly.py + launchd stdout/stderr)
+logs/*
+!logs/.gitkeep

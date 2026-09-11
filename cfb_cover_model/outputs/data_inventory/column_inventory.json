@@ -1,4 +1,5 @@
 {
+  "experiment_tag": null,
   "n_games_raw_joined": 2386,
   "n_pushes_excluded": 38,
   "n_games_after_push_filter": 2348,
@@ -125,5 +126,5 @@
   "excluded_seasons": [
     2020
   ],
-  "output_path": "/Users/campbelltaylor/Projects/CFB_Projects/College_Football_Gambling_Model/cfb_cover_model/data/processed/modeling_dataset.parquet"
+  "output_path": "/Users/campbelltaylor/Projects/CFB_Projects/college_football_analytics/.claude/worktrees/fatigue-bye-experiment/cfb_cover_model/data/processed/modeling_dataset.parquet"
 }
