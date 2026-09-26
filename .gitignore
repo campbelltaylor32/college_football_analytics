@@ -20,3 +20,6 @@ Data/*.csv
 
 # Logs
 ingest.log
+
+# Cached API pulls for cfb_ryan_day_offense
+cfb_ryan_day_offense/data/
