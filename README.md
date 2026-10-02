@@ -24,7 +24,8 @@ college_football_analytics/
 ├── cfb_rb_rushing_model/       weekly RB rushing-yards regression model
 ├── cfb_pythagorean_model/      retrospective Pythagorean win% analysis (2025 season)
 ├── cfb_talent_distribution/    recruiting-talent distribution analysis (2015-2025)
-└── cfb_transfer_portal_flow/   conference-level transfer-portal flow analysis (2021-2025)
+├── cfb_transfer_portal_flow/   conference-level transfer-portal flow analysis (2021-2025)
+└── cfb_playcall_predictability/ run/pass play-call classifier + least/most predictable offenses
 ```
 
 Each `cfb_*` directory is a self-contained Python (or R) project with its own `README.md`,
@@ -187,6 +188,12 @@ Conference-level analysis of who's winning and losing on transfer-portal movemen
 Finds the Big 12 leads on both raw net talent gained and per-transfer quality delta, while the
 SEC and Big Ten post negative raw net talent (roster-crunch churn) but still clearly trade up in
 quality per transfer.
+
+### [`cfb_playcall_predictability/`](cfb_playcall_predictability/README.md)
+Which offenses are hardest to call run vs pass? A play-level LightGBM classifier (situation,
+pregame market, team tendencies prior season + season-to-date, opponent defense, in-game flow;
+2015-2025, walk-forward validated) scores every 2026 call. Each offense's predictability is the
+share of its run/pass uncertainty the model explains beyond its own run/pass mix.
 
 ---
 

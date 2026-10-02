@@ -1,0 +1,40 @@
+full_feature_start_season: 2015   # 2014 has no prior season for the tendency features
+excluded_seasons: []              # 2020 is kept for training (play-calling still valid)
+min_train_seasons: 4
+walk_forward_validation_seasons: [2019, 2021, 2022, 2023, 2024]
+final_holdout_season: 2025
+target_season: 2026
+random_seed: 42
+
+# Plays per team required before a team gets ranked.
+min_team_plays: 150
+bootstrap_reps: 1000
+ci_level: 0.90
+
+models:
+  baselines:
+    - situational_logit     # league-wide: down, distance, field position, score, clock
+    - team_prior_rate       # team's prior-season pass rate, nothing else
+  candidates:
+    - logit_full
+    - xgboost
+    - lightgbm
+
+hyperparams:
+  xgboost:
+    n_estimators: 600
+    learning_rate: 0.05
+    max_depth: 6
+    min_child_weight: 50
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_lambda: 1.0
+  lightgbm:
+    n_estimators: 600
+    learning_rate: 0.05
+    num_leaves: 63
+    min_child_samples: 200
+    subsample: 0.8
+    subsample_freq: 1
+    colsample_bytree: 0.8
+    reg_lambda: 1.0

@@ -1,0 +1,30 @@
+{
+  "model": "lightgbm",
+  "trained_on_seasons": [
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "n_train_calls": 1048256,
+  "walk_forward_log_loss": 0.585088897785585,
+  "holdout_log_loss": 0.5876166953392621,
+  "holdout_auc": 0.7494314215214992,
+  "hyperparams": {
+    "n_estimators": 600,
+    "learning_rate": 0.05,
+    "num_leaves": 63,
+    "min_child_samples": 200,
+    "subsample": 0.8,
+    "subsample_freq": 1,
+    "colsample_bytree": 0.8,
+    "reg_lambda": 1.0
+  }
+}

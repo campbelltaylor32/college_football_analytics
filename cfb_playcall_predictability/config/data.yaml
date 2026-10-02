@@ -1,0 +1,45 @@
+# Play labeling + filtering. Plays come from data/interim/pbp_<season>.parquet
+# (scripts/pull_pbp.R), games / betting lines / coaches from MySQL.
+
+first_season: 2014
+current_season: 2026
+
+# play_type -> label. Anything not listed is not a run/pass decision (special teams,
+# penalties with no snap, timeouts, period markers) and is dropped.
+pass_play_types:
+  - Pass Reception
+  - Pass Incompletion
+  - Passing Touchdown
+  - Sack
+  - Interception Return
+  - Interception Return Touchdown
+  - Pass Interception Return
+  - Pass Interception
+  - Pass Completion
+run_play_types:
+  - Rush
+  - Rushing Touchdown
+# Fumble / safety plays can follow either call. They are labeled from cfbfastR's own
+# rush / pass flags (which parse the play text), and dropped when neither is set.
+flag_labeled_play_types:
+  - Fumble Recovery (Own)
+  - Fumble Recovery (Opponent)
+  - Fumble Return Touchdown
+  - Fumble Recovery (Opponent) Touchdown
+  - Safety
+
+# Not real play calls: victory-formation kneels and clock-stopping spikes.
+exclude_text_pattern: "kneel|spike"
+
+# Garbage time (same thresholds as cfb_ryan_day_offense): drop plays where the
+# absolute score margin exceeds the threshold for that quarter.
+garbage_time_margin:
+  2: 38
+  3: 28
+  4: 22
+
+# Overtime is a different game (no clock, fixed field position) -- dropped.
+max_period: 4
+
+# Betting line provider preference, first available wins.
+line_providers: [consensus, Bovada, DraftKings, ESPN Bet, William Hill (New Jersey), teamrankings, numberfire, Caesars]

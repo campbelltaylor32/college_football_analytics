@@ -1,0 +1,27 @@
+# Shrinkage strengths (pseudo-play counts) for every "rate so far" feature. A rate observed on
+# n plays is blended as (n*rate + k*prior) / (n + k), so small samples lean on the prior.
+shrinkage:
+  prior_season_to_league: 40     # last season's team split -> league average
+  season_to_date_to_prior: 60    # this season's split so far -> last season's split
+  in_game_pass_rate: 10          # this game's pass rate so far -> season-to-date split
+  in_game_efficiency: 8          # this game's success / EPA so far -> league average
+  defense_to_prior: 80           # defense allowed-so-far -> last season's defense
+
+# Situation buckets for team pass-rate tendencies. Each one becomes a prior-season and a
+# season-to-date feature. Definitions live in features/tendencies.py::bucket_masks.
+tendency_buckets:
+  - overall
+  - early_down_neutral
+  - first_and_10
+  - second_long
+  - second_short
+  - third_long
+  - third_short
+  - red_zone
+  - trailing
+  - leading
+
+long_distance: 7     # >= this many yards to go is "long"
+short_distance: 3    # <= this many yards to go is "short"
+neutral_margin: 8    # |score margin| <= this, Q1-Q3, is "neutral"
+lead_margin: 9       # >= this many points ahead / behind is leading / trailing
