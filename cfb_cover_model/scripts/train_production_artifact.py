@@ -15,6 +15,12 @@ Usage:
         data/processed/modeling_dataset.parquet + extended_history.parquet already contain)
     python scripts/train_production_artifact.py --season 2026 --week 3 --dry-run
         (train and print a summary, but skip writing anything to disk)
+
+Set CFB_EXPERIMENT=<tag> to train against an isolated experiment's dataset/feature-selection
+outputs (see src/cfb_cover_model/experiment_paths.py) and persist the resulting artifact under
+outputs/experiments/<tag>/models/production/ instead of the real outputs/models/production/ -
+the confirmed production artifact and the FastAPI service that loads it are never touched by a
+tagged run. Unset (the default): identical to before this existed.
 """
 from __future__ import annotations
 
@@ -25,13 +31,24 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from cfb_cover_model import experiment_paths
 from cfb_cover_model.serving.artifact import (
-    PRODUCTION_DIR,
     ProductionArtifact,
     resolve_default_configs,
     save_artifact,
     train_production_artifact,
 )
+
+
+# Resolved once at import time from CFB_EXPERIMENT (must be set in the environment before this
+# script runs, same convention as every other pipeline script's experiment_paths-derived
+# constants) - redirected under outputs/experiments/<tag>/... when tagged, else identical to
+# before this existed. See module docstring.
+DATASET_PATH = experiment_paths.dataset_path()
+FEATURE_COLUMNS_PATH = experiment_paths.output_path("data_inventory", "feature_columns.json")
+WINNING_CONFIG_PATH = experiment_paths.output_path("feature_analysis", "winning_feature_config.json")
+THRESHOLD_TABLE_PATH = experiment_paths.output_path("threshold_selection", "chosen_threshold_per_model.csv")
+OUTPUT_DIR = experiment_paths.output_path("models", "production")
 
 
 def _prune_old_versions(output_dir: Path, keep: int) -> list[Path]:
@@ -53,7 +70,7 @@ def _prune_old_versions(output_dir: Path, keep: int) -> list[Path]:
 def run(
     season: int,
     week: int,
-    output_dir: Path = PRODUCTION_DIR,
+    output_dir: Path = OUTPUT_DIR,
     *,
     dry_run: bool = False,
     prune: bool = True,
@@ -67,6 +84,10 @@ def run(
     artifact = train_production_artifact(
         data_cfg, features_cfg, modeling_cfg, random_state,
         season_through=season, week_through=week,
+        dataset_path=DATASET_PATH,
+        feature_columns_path=FEATURE_COLUMNS_PATH,
+        winning_config_path=WINNING_CONFIG_PATH,
+        threshold_table_path=THRESHOLD_TABLE_PATH,
     )
     if not dry_run:
         save_artifact(artifact, output_dir=output_dir)
@@ -80,7 +101,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--season", type=int, required=True, help="Most recent completed season, label only")
     parser.add_argument("--week", type=int, required=True, help="Most recent completed week, label only")
-    parser.add_argument("--output-dir", type=str, default=str(PRODUCTION_DIR))
+    parser.add_argument("--output-dir", type=str, default=str(OUTPUT_DIR))
     parser.add_argument("--dry-run", action="store_true", help="Train but skip persisting to disk")
     parser.add_argument("--no-prune", action="store_true", help="Skip pruning old artifact versions")
     parser.add_argument(

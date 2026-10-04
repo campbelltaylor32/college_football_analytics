@@ -9,6 +9,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from cfb_cover_model.engineered_features import (
     RETURNING_PRODUCTION_DROP,
     RETURNING_PRODUCTION_KEEP,
+    TRANSFORMS,
+    add_fatigue_and_rest_features,
     apply_engineered_features,
     consolidate_returning_production,
     consolidate_special_teams,
@@ -137,6 +139,74 @@ def test_matchup_adjustment_is_additive_not_replacing():
     assert "home_matchup_adj_Offense_Success_Rate_prev_week" in out_cols
     expected = 0.5 - 0.4
     assert abs(out_frame["home_matchup_adj_Offense_Success_Rate_prev_week"].iloc[0] - expected) < 1e-9
+
+
+def test_fatigue_feature_sums_offense_and_defense_plays_per_transform():
+    frame = pd.DataFrame(
+        {
+            "home_prev_week_Total_Offense_Plays": [60.0],
+            "home_prev_week_Total_Defense_Plays": [55.0],
+            "home_Total_Offense_Plays_avg_all": [64.0],
+            "home_Total_Defense_Plays_avg_all": [58.0],
+            "home_Total_Offense_Plays_avg3": [62.0],
+            "home_Total_Defense_Plays_avg3": [59.0],
+            "away_prev_week_Total_Offense_Plays": [70.0],
+            "away_prev_week_Total_Defense_Plays": [65.0],
+        }
+    )
+    feature_columns = list(frame.columns)
+
+    out_frame, out_cols = add_fatigue_and_rest_features(frame, feature_columns)
+
+    assert out_frame["home_total_snaps_prev_week"].iloc[0] == 60.0 + 55.0
+    assert out_frame["home_total_snaps_avg_all"].iloc[0] == 64.0 + 58.0
+    assert out_frame["home_total_snaps_avg3"].iloc[0] == 62.0 + 59.0
+    assert out_frame["away_total_snaps_prev_week"].iloc[0] == 70.0 + 65.0
+    # away has no avg_all/avg3 source columns in this frame - must be skipped, not KeyError'd
+    assert "away_total_snaps_avg_all" not in out_cols
+    assert "away_total_snaps_avg3" not in out_cols
+    # additive - raw source columns are kept
+    for raw_col in frame.columns:
+        assert raw_col in out_cols
+
+
+def test_fatigue_feature_skips_transform_missing_either_source_column():
+    # only the offense side present for prev_week - no matching defense column
+    frame = pd.DataFrame({"home_prev_week_Total_Offense_Plays": [60.0]})
+    out_frame, out_cols = add_fatigue_and_rest_features(frame, list(frame.columns))
+
+    assert "home_total_snaps_prev_week" not in out_cols
+    for transform in TRANSFORMS:
+        assert f"home_total_snaps_{transform}" not in out_frame.columns
+
+
+def test_apply_engineered_features_defaults_to_no_fatigue_columns():
+    frame = pd.DataFrame(
+        {
+            "home_prev_week_Total_Offense_Plays": [60.0],
+            "home_prev_week_Total_Defense_Plays": [55.0],
+            "away_prev_week_Total_Offense_Plays": [70.0],
+            "away_prev_week_Total_Defense_Plays": [65.0],
+        }
+    )
+    out_frame, out_cols = apply_engineered_features(frame, list(frame.columns))
+    assert not any("total_snaps" in c for c in out_cols)
+    assert not any("total_snaps" in c for c in out_frame.columns)
+
+
+def test_apply_engineered_features_includes_fatigue_columns_when_opted_in():
+    frame = pd.DataFrame(
+        {
+            "home_prev_week_Total_Offense_Plays": [60.0],
+            "home_prev_week_Total_Defense_Plays": [55.0],
+            "away_prev_week_Total_Offense_Plays": [70.0],
+            "away_prev_week_Total_Defense_Plays": [65.0],
+        }
+    )
+    out_frame, out_cols = apply_engineered_features(frame, list(frame.columns), include_fatigue_features=True)
+    assert "home_total_snaps_prev_week" in out_cols
+    assert "away_total_snaps_prev_week" in out_cols
+    assert out_frame["home_total_snaps_prev_week"].iloc[0] == 115.0
 
 
 def test_apply_engineered_features_end_to_end_no_nans():
