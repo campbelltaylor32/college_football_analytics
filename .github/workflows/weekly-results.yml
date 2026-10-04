@@ -57,6 +57,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true   # *.csv is in Git LFS (.gitattributes): threshold table, oof predictions, ratings
 
       - uses: ./.github/actions/cfb-setup
         with:
