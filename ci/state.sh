@@ -54,7 +54,7 @@ case "$cmd" in
     ;;
   dump-db)
     # shellcheck disable=SC2046
-    mysqldump $(mysql_args) --single-transaction --quick --no-tablespaces "$CFB_DB_NAME" | gzip -6 > "$DIR/cfb_db.sql.gz"
+    mysqldump $(mysql_args) --single-transaction --quick --no-tablespaces --set-gtid-purged=OFF "$CFB_DB_NAME" | gzip -6 > "$DIR/cfb_db.sql.gz"
     ls -la "$DIR/cfb_db.sql.gz"
     ;;
   upload)
