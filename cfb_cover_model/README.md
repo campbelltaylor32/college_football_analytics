@@ -49,24 +49,37 @@ Two parallel paths, kept deliberately separate (see "Direct API ingestion" below
 ```
 cfb_cover_model/
 ├── config/                  data.yaml, features.yaml, modeling.yaml
-├── docs/                    data dictionary, leakage rules, methodology, limitations, project story
+├── docs/                    data dictionary, leakage rules, methodology, limitations, project
+│                              story, serving_and_monitoring.md
 ├── notebooks/                01-04, exploratory companions to the scripts below
-├── scripts/                  one script per pipeline stage (see "Running the pipeline")
+├── scripts/                  one script per pipeline stage (see "Running the pipeline"), plus
+│                              train_production_artifact.py / run_weekly_monitoring.py /
+│                              run_scheduler.py (see "Serving and monitoring")
 ├── src/cfb_cover_model/
 │   ├── config.py, data.py, targets.py, cleaning.py, data_validation.py
 │   ├── feature_selection/    correlation_pruning.py, embedded_selection.py,
 │   │                          transform_ablation.py, pca_reduction.py
 │   ├── modeling/              splits.py, classifiers.py, regressor.py, stacking.py,
 │   │                           calibration.py, evaluation.py
-│   └── ingest/                 direct-CFBD-API port of the R feature pipeline — cfbd_client.py,
-│                                 raw_cache.py, box_score_features.py, pbp_features.py,
-│                                 rolling_features.py, talent_coach_returning.py, pipeline.py
+│   ├── ingest/                 direct-CFBD-API port of the R feature pipeline — cfbd_client.py,
+│   │                             raw_cache.py, box_score_features.py, pbp_features.py,
+│   │                             rolling_features.py, talent_coach_returning.py, pipeline.py
+│   ├── serving/                 artifact.py (train + persist a versioned production artifact),
+│   │                             scoring.py (score a week against an already-loaded artifact)
+│   ├── api/                     FastAPI app — app.py, artifact_store.py, dependencies.py,
+│   │                             schemas.py, routers/{health,predictions,monitoring,admin}.py
+│   └── monitoring/               data_drift.py (Evidently), prediction_drift.py (custom,
+│                                   graded against realized outcomes)
 ├── tests/                     pytest suite, including leakage + push-handling + OOF-integrity
-│                               tests and per-module ingest unit tests
+│                               tests, per-module ingest unit tests, and serving/API/monitoring
+│                               tests
 ├── data/{raw,interim,processed}   cached intermediates (gitignored) — data/raw/ is the ingest
 │                                    package's per-endpoint API cache
-└── outputs/                   eda, feature_analysis, model_comparison, threshold_selection,
-                                calibration, predictions, models, validation
+├── outputs/                   eda, feature_analysis, model_comparison, threshold_selection,
+│                               calibration, predictions, validation, and:
+│                               models/production/  versioned production artifacts (gitignored)
+│                               monitoring/          data-drift + prediction-drift reports (gitignored)
+├── Dockerfile, docker-compose.yml, .env.example    local-only serving + scheduler deployment
 ```
 
 ## Installation
@@ -83,6 +96,9 @@ pip install -e ".[dev,boosting]"
 `CFBD_API_KEY` in the repo root's `.env` is only required for the direct-API path
 (`--live`, `ingest_and_update_history.py`) — everything else only reads the two CSVs above and
 needs no credentials.
+
+Add the `serving` extra (`pip install -e ".[dev,boosting,serving]"`) for the FastAPI service,
+drift monitoring, and scheduler — see "Serving and monitoring" below.
 
 ## Running the pipeline
 
@@ -113,6 +129,14 @@ python scripts/generate_week_predictions.py --week <N>   # replacement for Week_
 ```
 
 `run_pipeline.py` also accepts `--stage <name>` and `--from-stage`/`--to-stage`.
+
+Serving/monitoring stages (require the `serving` extra, see "Serving and monitoring" below):
+
+```bash
+python scripts/train_production_artifact.py --season <Y> --week <N>   # -> outputs/models/production/
+python scripts/run_weekly_monitoring.py \
+    --completed-season <Y> --completed-week <N> --upcoming-season <Y> --upcoming-week <N+1>
+```
 
 ## 2026 deployment
 
@@ -166,6 +190,24 @@ upcoming week:
 - The hardcoded CFBD API key in `R Scripts/2025_Game_Update.R` and the missing `.env` entry
   in the root `.gitignore` are still unresolved, and now more load-bearing since the live
   path depends on that same key — rotate the key and fix `.gitignore` before relying on this.
+
+## Serving and monitoring
+
+A FastAPI inference service (`src/cfb_cover_model/api/`) serving the dual-model agreement
+signal from a persisted, versioned artifact (`outputs/models/production/`, trained by
+`scripts/train_production_artifact.py` rather than refit per request), plus Evidently-based data-
+drift and realized-outcome prediction/calibration-drift monitoring
+(`src/cfb_cover_model/monitoring/`). Runs locally via Docker Compose (`docker compose up` from
+this directory) — an `api` service and a `scheduler` service that drives weekly
+ingest → retrain → monitor on a manually-bumped `PRODUCTION_SEASON`/`PRODUCTION_WEEK` cadence.
+
+Or, without Docker: `scripts/run_weekly.py` chains
+calendar-resolve → ingest → retrain → **score the upcoming week** → monitor in one process,
+scheduled every Sunday by `deploy/com.cfb.cover-model-weekly.plist` (launchd). No week
+number to bump. This is the recommended path on the local Mac — see
+`docs/serving_and_monitoring.md` §6.1.
+
+Full details, API reference, and the weekly operational runbook: `docs/serving_and_monitoring.md`.
 
 ## Feature deep-dive
 

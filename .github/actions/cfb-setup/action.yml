@@ -1,0 +1,50 @@
+name: CFB pipeline setup
+description: >-
+  Shared setup for the weekly CFB jobs: Python venvs for cfb_cover_model and cfb_power_ratings
+  (pinned to requirements-ci.txt so pickled models load), Quarto, the site repo checkout in
+  ./site, and the gitignored pipeline state restored from the `pipeline-state` release.
+
+inputs:
+  site-token:
+    description: Token with contents read/write on the site repo
+    required: true
+  site-repo:
+    description: owner/name of the GitHub Pages site repo
+    default: campbelltaylor32/campbelltaylor32.github.io
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: pip
+        cache-dependency-path: |
+          cfb_cover_model/requirements-ci.txt
+          cfb_power_ratings/requirements-ci.txt
+
+    - name: Python venvs
+      shell: bash
+      run: |
+        for p in cfb_cover_model cfb_power_ratings; do
+          python -m venv "$p/.venv"
+          "$p/.venv/bin/pip" install -q -r "$p/requirements-ci.txt"
+          "$p/.venv/bin/pip" install -q --no-deps -e "$p"
+        done
+
+    - uses: quarto-dev/quarto-actions/setup@v2
+      with:
+        version: "1.8.24"
+
+    - name: Check out site repo
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.site-repo }}
+        token: ${{ inputs.site-token }}
+        path: site
+
+    - name: Restore pipeline state
+      shell: bash
+      run: |
+        ci/state.sh download
+        ci/state.sh unpack-cover

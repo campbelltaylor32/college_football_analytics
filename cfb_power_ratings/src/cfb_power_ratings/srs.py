@@ -78,11 +78,37 @@ def site_adjusted_margin(team_games: pd.DataFrame, hfa: float) -> pd.Series:
     increased by `hfa` (it overcame a disadvantage to get that margin); neutral-site games are
     left alone."""
     raw_margin = team_games["points_for"] - team_games["points_against"]
-    site_adj = np.where(
+    return raw_margin + site_adjustment(team_games, hfa)
+
+
+def site_adjustment(team_games: pd.DataFrame, hfa: float) -> np.ndarray:
+    """The per-row home-field correction site_adjusted_margin adds to a raw margin -- factored
+    out so rating_engine.py can apply the same correction to a blended (scoring + efficiency)
+    margin rather than only to raw points."""
+    return np.where(
         team_games["neutral_site"], 0.0,
         np.where(team_games["is_home"], -hfa, hfa),
     )
-    return raw_margin + site_adj
+
+
+def estimate_non_fbs_pool_rating(
+    team_games: pd.DataFrame,
+    hfa: float,
+    fbs_teams: set[str],
+    non_fbs_pool_name: str = "generic_low_major",
+) -> float:
+    """The non-FBS pseudo-team's fixed, non-iterated rating: calibrated so that a perfectly-
+    average FBS team's expected site-adjusted margin against a non-FBS opponent, plus this
+    rating, nets to 0 -- see module docstring point 2. Factored out of compute_srs() so callers
+    that need just this one number (e.g. a schedule-strength estimate for a season that hasn't
+    been played yet, where there's nothing to iterate SRS over) don't have to re-derive it."""
+    g = team_games[team_games["team"].isin(fbs_teams)].copy()
+    if g.empty:
+        return 0.0
+    g["opponent_rated"] = np.where(g["opponent"].isin(fbs_teams), g["opponent"], non_fbs_pool_name)
+    g["site_adj_margin"] = site_adjusted_margin(g, hfa)
+    non_fbs_mask = g["opponent_rated"] == non_fbs_pool_name
+    return -float(g.loc[non_fbs_mask, "site_adj_margin"].mean()) if non_fbs_mask.any() else 0.0
 
 
 def compute_srs(
@@ -103,12 +129,7 @@ def compute_srs(
     g["opponent_rated"] = np.where(g["opponent"].isin(fbs_teams), g["opponent"], non_fbs_pool_name)
     g["site_adj_margin"] = site_adjusted_margin(g, hfa)
 
-    non_fbs_mask = g["opponent_rated"] == non_fbs_pool_name
-    # Fixed, not iterated: calibrated so that a perfectly-average FBS team's expected margin
-    # against a non-FBS opponent, plus this rating, nets to 0 -- see module docstring point 2.
-    non_fbs_pool_rating = (
-        -float(g.loc[non_fbs_mask, "site_adj_margin"].mean()) if non_fbs_mask.any() else 0.0
-    )
+    non_fbs_pool_rating = estimate_non_fbs_pool_rating(team_games, hfa, fbs_teams, non_fbs_pool_name)
 
     return iterate_ratings(
         teams, g["team"].values, g["opponent_rated"].values, g["site_adj_margin"].values,
@@ -124,6 +145,7 @@ def iterate_ratings(
     margin_col: np.ndarray,
     fixed_opponent_ratings: dict[str, float],
     iterations: int = DEFAULT_SRS_ITERATIONS,
+    weight_col: np.ndarray | None = None,
 ) -> pd.Series:
     """The core opponent-adjusted fixed-point iteration, factored out so rating_engine.py's
     in-season blended update can reuse it with extra synthetic ("phantom game") rows mixed
@@ -131,7 +153,11 @@ def iterate_ratings(
     set of entities actually being solved for (their ratings update every pass and recenter to
     mean 0); `fixed_opponent_ratings` holds any additional opponent identities (e.g. the
     non-FBS pool, or rating_engine.py's league-average anchor) whose rating never updates.
+    `weight_col` (optional, default every row weight 1) makes each team's update a weighted
+    mean -- lets rating_engine.py give the preseason prior a fractional number of games.
     """
+    weights = np.ones(len(team_col)) if weight_col is None else np.asarray(weight_col, dtype=float)
+    weight_sums = pd.Series(weights, index=team_col).groupby(level=0).sum()
     srs = pd.Series(0.0, index=teams)
     for _ in range(iterations):
         lookup = srs.to_dict()
@@ -139,7 +165,8 @@ def iterate_ratings(
         opp_srs = np.array([lookup[o] for o in opponent_col])
         adj_margin = margin_col + opp_srs
         new_srs = (
-            pd.Series(adj_margin, index=team_col).groupby(level=0).mean().reindex(teams).fillna(0.0)
+            (pd.Series(adj_margin * weights, index=team_col).groupby(level=0).sum() / weight_sums)
+            .reindex(teams).fillna(0.0)
         )
         new_srs -= new_srs.mean()
         srs = new_srs

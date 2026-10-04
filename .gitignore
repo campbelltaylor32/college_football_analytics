@@ -20,3 +20,7 @@ Data/*.csv
 
 # Logs
 ingest.log
+
+# GitHub Actions weekly jobs (ci/state.sh scratch dir, site repo checkout)
+_state/
+site/

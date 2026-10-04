@@ -1,0 +1,111 @@
+# Tuesday: publish this week's picks.
+#   - retrain the dual-model production artifact on history through last week
+#   - score the upcoming week (lines have settled more by Tuesday than on Sunday)
+#   - game cards + full-slate PDF, then rebuild the Weekly Picks page
+# No MySQL / R needed: the cover model reads its own CFBD parquet cache. Last week's results
+# and the ratings/dashboard are the Sunday job (weekly-results.yml).
+name: Weekly picks (Tuesday)
+
+on:
+  schedule:
+    - cron: "0 15 * * 2"   # Tue 15:00 UTC = 10-11am ET, before any Tuesday-night MACtion kickoff
+  workflow_dispatch:
+    inputs:
+      season:
+        description: Season (blank = from the CFBD calendar)
+        required: false
+      completed_week:
+        description: Last completed week; picks are for the week after (blank = from the CFBD calendar)
+        required: false
+      push:
+        description: Push to the site and to main (uncheck for a dry run)
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cfb-pipeline
+  cancel-in-progress: false
+
+env:
+  CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+  GH_TOKEN: ${{ github.token }}
+  RATINGS_TAG: pg1_sw0.75
+
+jobs:
+  picks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/cfb-setup
+        with:
+          site-token: ${{ secrets.SITE_REPO_TOKEN }}
+
+      - name: Resolve weeks
+        id: weeks
+        env:
+          SEASON: ${{ inputs.season }}
+          COMPLETED_WEEK: ${{ inputs.completed_week }}
+        run: cfb_cover_model/.venv/bin/python ci/resolve_weeks.py picks
+
+      - name: Cover model - retrain + score upcoming week
+        if: steps.weeks.outputs.run == 'true'
+        working-directory: cfb_cover_model
+        run: |
+          .venv/bin/python scripts/run_weekly.py --only ingest,retrain,score \
+            --season ${{ steps.weeks.outputs.season }} \
+            --completed-week ${{ steps.weeks.outputs.completed }} \
+            --upcoming-week ${{ steps.weeks.outputs.upcoming }}
+          .venv/bin/python scripts/render_week_game_cards.py \
+            --season ${{ steps.weeks.outputs.season }} --week ${{ steps.weeks.outputs.upcoming }}
+
+      - name: Build + render site pages
+        if: steps.weeks.outputs.run == 'true'
+        working-directory: site
+        run: |
+          ../cfb_cover_model/.venv/bin/python tools/build_cfb_weekly_tools.py \
+            --season ${{ steps.weeks.outputs.season }} --analytics-dir "$GITHUB_WORKSPACE" --tag "$RATINGS_TAG"
+          # the builder re-inlines both apps, so re-render both pages to keep docs/ in sync with tools/
+          quarto render tools/cfb-picks.qmd
+          quarto render tools/cfb-power-rankings.qmd
+
+      - name: Publish
+        if: steps.weeks.outputs.run == 'true' && (github.event_name == 'schedule' || inputs.push)
+        run: |
+          MSG="Weekly CFB picks: ${{ steps.weeks.outputs.season }} week ${{ steps.weeks.outputs.upcoming }}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add cfb_cover_model/outputs
+          git diff --cached --quiet || git commit -q -m "$MSG"
+          git push origin HEAD:main
+
+          cd site
+          git add tools docs
+          git diff --cached --quiet || git commit -q -m "$MSG"
+          git push origin HEAD:main
+          cd ..
+
+          ci/state.sh pack-cover
+          ci/state.sh upload cover_state.tar.gz
+
+      - name: Dry-run artifacts
+        if: steps.weeks.outputs.run == 'true' && github.event_name == 'workflow_dispatch' && !inputs.push
+        uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-picks
+          path: |
+            cfb_cover_model/outputs/predictions
+            site/tools/cfb-picks
+            site/docs/tools
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Weekly picks" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ${{ steps.weeks.outputs.reason }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ran: ${{ steps.weeks.outputs.run }}" >> "$GITHUB_STEP_SUMMARY"

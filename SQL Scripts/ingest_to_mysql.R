@@ -33,10 +33,18 @@ if (Sys.getenv("CFBD_API_KEY") == "") {
   stop("CFBD_API_KEY not found -- expected it in the repo root's .env (see .env.example). Run this script from the repo root.")
 }
 
-CURRENT_SEASON <- 2026
-CURRENT_WEEK   <- 0   # no 2026 games/lines exist yet; 0 skips those endpoints for this season
-                      # entirely (WEEKS[WEEKS <= 0] is empty) rather than requesting a
-                      # not-yet-played week, which the API/retry-backoff handled very slowly
+# CURRENT_SEASON / CURRENT_WEEK can be overridden by env vars of the same name (the GitHub
+# Actions weekly jobs set them from the CFBD calendar); the literals below are the local default.
+env_int <- function(name, default) {
+  v <- Sys.getenv(name)
+  if (nzchar(v)) as.integer(v) else default
+}
+CURRENT_SEASON <- env_int("CURRENT_SEASON", 2026)
+CURRENT_WEEK   <- env_int("CURRENT_WEEK", 5)   # latest completed week of the current season -- ingest games/lines/stats
+                      # for weeks 1..CURRENT_WEEK (WEEKS[WEEKS <= CURRENT_WEEK]). Bump this each
+                      # week as the season progresses. 0 skips those endpoints entirely (for a
+                      # season that hasn't kicked off), rather than requesting a not-yet-played
+                      # week, which the API/retry-backoff handled very slowly.
 WEEKS          <- 1:15
 
 # earliest year each endpoint actually has data, per live probe against the
@@ -53,7 +61,15 @@ START_YEAR <- list(
   plays                = 2013   # earlier rows would 100% fail the FK and get skipped anyway
 )
 
-con <- dbConnect(RMariaDB::MariaDB(), host = "localhost", user = "root", password = "", dbname = "cfb_football")
+# CFB_DB_* env vars (same ones cfb_power_ratings/config/database.yaml reads) override the local defaults.
+con <- dbConnect(
+  RMariaDB::MariaDB(),
+  host     = Sys.getenv("CFB_DB_HOST", "localhost"),
+  port     = env_int("CFB_DB_PORT", 3306L),
+  user     = Sys.getenv("CFB_DB_USER", "root"),
+  password = Sys.getenv("CFB_DB_PASSWORD", ""),
+  dbname   = Sys.getenv("CFB_DB_NAME", "cfb_football")
+)
 on.exit(dbDisconnect(con), add = TRUE)
 
 # ---------------------------------------------------------------------------

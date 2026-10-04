@@ -12,6 +12,9 @@ as load_and_validate_dataset.py (see cfb_cover_model.targets, cfb_cover_model.cl
 cfb_cover_model.engineered_features, cfb_cover_model.data_validation), just sourced from
 ingest.pipeline.build_historical_rows() instead of the R-generated results/predictors CSVs.
 
+The body lives in run(season, weeks) so scripts/run_weekly.py can call it directly (same
+main()-over-run() split as scripts/train_production_artifact.py).
+
 Usage:
     python scripts/ingest_and_update_history.py --season 2026 --weeks 1 2 3
         (re-fetches and rebuilds rows for the given completed weeks; idempotent per-week
@@ -38,22 +41,18 @@ from cfb_cover_model.targets import add_push_and_targets, drop_pushes
 OUT_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "extended_history.parquet"
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--season", type=int, required=True)
-    parser.add_argument(
-        "--weeks", type=int, nargs="+", required=True,
-        help="Completed week numbers to (re-)fetch and append, e.g. --weeks 1 2 3",
-    )
-    args = parser.parse_args()
-
+def run(season: int, weeks: list[int], out_path: Path = OUT_PATH) -> pd.DataFrame:
+    """(Re-)fetch the given completed weeks from the CFBD API, run the same
+    target/feature/validation pipeline load_and_validate_dataset.py uses, and append to
+    extended_history.parquet (existing game_ids overwritten, not duplicated). Returns the
+    combined frame, or an empty frame if no completed games were found for those weeks."""
     data_cfg = load_data_config()
     client = cfbd_client.get_client()
 
-    raw = pipeline.build_historical_rows(client, args.season, args.weeks)
+    raw = pipeline.build_historical_rows(client, season, weeks)
     if raw.empty:
-        print(f"No completed games found for season={args.season} weeks={args.weeks}")
-        return
+        print(f"No completed games found for season={season} weeks={weeks}")
+        return pd.DataFrame()
 
     # build_historical_rows returns an *absolute* spread + home_favored (0/1), matching
     # ../Data/CFB_Gambling_Predictors_Final_PBP.csv's schema - targets.py needs the
@@ -70,21 +69,33 @@ def main() -> None:
     )
     validate_modeling_frame(frame, feature_columns)
 
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if OUT_PATH.exists():
-        existing = pd.read_parquet(OUT_PATH)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    if out_path.exists():
+        existing = pd.read_parquet(out_path)
         combined = pd.concat([existing, frame], ignore_index=True)
         combined = combined.drop_duplicates(subset=["game_id"], keep="last")
     else:
         combined = frame
     combined = combined.reset_index(drop=True)
-    combined.to_parquet(OUT_PATH, index=False)
+    combined.to_parquet(out_path, index=False)
 
     print(
-        f"season={args.season} weeks={args.weeks}: {len(raw)} games fetched, "
-        f"{n_pushes} pushes excluded, {len(frame)} rows added/updated -> {OUT_PATH} "
+        f"season={season} weeks={weeks}: {len(raw)} games fetched, "
+        f"{n_pushes} pushes excluded, {len(frame)} rows added/updated -> {out_path} "
         f"({len(combined)} total rows)"
     )
+    return combined
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--season", type=int, required=True)
+    parser.add_argument(
+        "--weeks", type=int, nargs="+", required=True,
+        help="Completed week numbers to (re-)fetch and append, e.g. --weeks 1 2 3",
+    )
+    args = parser.parse_args()
+    run(args.season, args.weeks)
 
 
 if __name__ == "__main__":

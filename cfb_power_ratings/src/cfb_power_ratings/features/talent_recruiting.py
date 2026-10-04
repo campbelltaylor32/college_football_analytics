@@ -95,9 +95,25 @@ def build_talent_recruiting_features(engine, seasons: list[int], min_matched_rec
         "SELECT season, school AS team, talent AS talent_composite FROM team_talent WHERE season IN :seasons",
         params={"seasons": tuple(seasons)}, engine=engine,
     )
+    missing_seasons = [s for s in seasons if s not in set(talent["season"].unique())]
+    if missing_seasons:
+        # The DB's team_talent table can lag behind CFBD's own endpoint -- verified live: the
+        # local DB had zero 2026 rows even after CFBD had published the real composite for all
+        # 138 FBS teams. Pull those specific seasons live rather than leaving every team's
+        # talent_composite NaN (which the modeling pipeline would otherwise impute away -- see
+        # models.py's TransitionTeamAwareImputer for how missing talent is actually handled, but
+        # a season CFBD HAS published shouldn't hit that path at all).
+        from cfb_power_ratings.cfbd_client import get_client
+        from cfb_power_ratings.live_data import fetch_team_talent
+
+        client = get_client()
+        live_frames = [fetch_team_talent(client, s) for s in missing_seasons]
+        live_talent = pd.concat(live_frames, ignore_index=True) if live_frames else pd.DataFrame(columns=talent.columns)
+        talent = pd.concat([talent, live_talent], ignore_index=True)
+
     bcr = _corrected_blue_chip_ratio(engine, seasons, min_matched_recruits)
     # outer, not left: team_talent can be empty for a season CFBD hasn't published its talent
-    # composite for yet (e.g. 2026 as of this writing, verified live) while blue_chip_ratio is
-    # still fully computable from team_rosters/recruiting_players alone -- a left-on-talent
-    # merge would silently drop bcr's real rows too whenever talent has none.
+    # composite for yet, while blue_chip_ratio is still fully computable from team_rosters/
+    # recruiting_players alone -- a left-on-talent merge would silently drop bcr's real rows too
+    # whenever talent has none.
     return talent.merge(bcr, on=["team", "season"], how="outer")

@@ -24,6 +24,14 @@ dependencies = [
 [project.optional-dependencies]
 boosting = ["xgboost>=2.0", "lightgbm>=4.3", "catboost>=1.2"]
 dev = ["pytest>=8.0", "pytest-cov>=5.0"]
+explain = ["shap>=0.45"]
+serving = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.30",
+    "evidently==0.4.33",
+    "apscheduler>=3.10,<4.0",
+    "requests>=2.31",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

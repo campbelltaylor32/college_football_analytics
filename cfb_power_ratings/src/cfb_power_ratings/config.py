@@ -12,6 +12,7 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 
+from cfb_power_ratings.efficiency import GarbageTimeConfig
 from cfb_power_ratings.utils.paths import CONFIG_DIR, PROJECT_ROOT
 
 _ENV_VAR_PATTERN = re.compile(r"\$\{([A-Z0-9_]+)\}")
@@ -84,8 +85,17 @@ class SRSConfig:
 
 @dataclass
 class RatingEngineConfig:
-    default_phantom_games: int
-    phantom_games_sweep: list[int]
+    default_phantom_games: float
+    phantom_games_sweep: list[float]
+
+
+@dataclass
+class EfficiencyConfig:
+    enabled: bool
+    scoring_weight: float
+    scoring_weight_sweep: list[float]
+    calibration_start_season: int
+    garbage_time: GarbageTimeConfig
 
 
 @dataclass
@@ -101,6 +111,7 @@ class ModelingConfig:
     candidate_models: list[str]
     srs: SRSConfig
     rating_engine: RatingEngineConfig
+    efficiency: EfficiencyConfig
 
 
 def load_database_config(path: Path = CONFIG_DIR / "database.yaml") -> DatabaseConfig:
@@ -127,6 +138,7 @@ def load_modeling_config(path: Path = CONFIG_DIR / "modeling.yaml") -> ModelingC
     raw = _load_yaml(path)
     srs_raw = raw["srs"]
     engine_raw = raw["rating_engine"]
+    eff_raw = raw["efficiency"]
     return ModelingConfig(
         srs_history_start_season=raw["srs_history_start_season"],
         full_feature_start_season=raw["full_feature_start_season"],
@@ -143,7 +155,18 @@ def load_modeling_config(path: Path = CONFIG_DIR / "modeling.yaml") -> ModelingC
             hfa_override=srs_raw.get("hfa_override"),
         ),
         rating_engine=RatingEngineConfig(
-            default_phantom_games=engine_raw["default_phantom_games"],
-            phantom_games_sweep=list(engine_raw["phantom_games_sweep"]),
+            default_phantom_games=float(engine_raw["default_phantom_games"]),
+            phantom_games_sweep=[float(x) for x in engine_raw["phantom_games_sweep"]],
+        ),
+        efficiency=EfficiencyConfig(
+            enabled=bool(eff_raw["enabled"]),
+            scoring_weight=float(eff_raw["scoring_weight"]),
+            scoring_weight_sweep=[float(x) for x in eff_raw["scoring_weight_sweep"]],
+            calibration_start_season=int(eff_raw["calibration_start_season"]),
+            garbage_time=GarbageTimeConfig(
+                min_period=int(eff_raw["garbage_time"]["min_period"]),
+                wp_low=float(eff_raw["garbage_time"]["wp_low"]),
+                wp_high=float(eff_raw["garbage_time"]["wp_high"]),
+            ),
         ),
     )

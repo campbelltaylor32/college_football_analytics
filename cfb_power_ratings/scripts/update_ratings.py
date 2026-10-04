@@ -9,8 +9,18 @@ re-run for), falls back to a live CFBD pull. The upcoming week's schedule is ALW
 -- games/betting_lines in the DB are completed-only by design (see SQL Scripts/README.md), so
 there is no DB path for "who plays whom next week."
 
-Usage: python scripts/update_ratings.py --season 2026 --week 4
+Each game's margin is a blend of its actual score and its play-by-play efficiency-implied
+margin (efficiency.py; weight from modeling.yaml's efficiency.scoring_weight or
+--scoring-weight). The ratings CSV also carries reporting-only offense/defense EPA/play and
+success-rate columns, raw and opponent-adjusted.
+
+Usage: python scripts/update_ratings.py --season 2026 --week 4 [--phantom-games 3] [--scoring-weight 0.5]
     (blends games through week 3, scores week 4's real matchups)
+
+Outputs are versioned by the weighting used, so runs with different weightings sit side by
+side instead of overwriting each other: week_<NN>_ratings_pg<P>_sw<W>.csv and
+week_<NN>_matchups_pg<P>_sw<W>.csv (e.g. week_05_ratings_pg5_sw0.5.csv). Pass the same
+`pg<P>_sw<W>` tag to the plot scripts as a third arg to chart a given version.
 """
 from __future__ import annotations
 
@@ -24,6 +34,13 @@ import pandas as pd
 
 from cfb_power_ratings.config import load_features_config, load_modeling_config
 from cfb_power_ratings.database import get_engine, get_fbs_teams_by_season, run_query
+from cfb_power_ratings.efficiency import (
+    efficiency_margins,
+    fit_efficiency_to_points,
+    load_team_game_efficiency,
+    opponent_adjusted_off_def,
+    team_game_frame,
+)
 from cfb_power_ratings.preseason import load_preseason_model_metadata, predict_preseason_ratings
 from cfb_power_ratings.rating_engine import (
     fit_residual_std,
@@ -68,13 +85,25 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--season", type=int, required=True)
     parser.add_argument("--week", type=int, required=True, help="Week to score; games through week-1 are blended in")
-    parser.add_argument("--phantom-games", type=int, default=None, help="Override modeling.yaml's default_phantom_games")
+    parser.add_argument("--phantom-games", type=float, default=None, help="Override modeling.yaml's default_phantom_games")
+    parser.add_argument(
+        "--scoring-weight", type=float, default=None,
+        help="Share of each game's margin from the actual score (rest from efficiency); overrides modeling.yaml. 1.0 = scoring only",
+    )
     args = parser.parse_args()
 
     engine = get_engine()
     features_cfg = load_features_config()
     modeling_cfg = load_modeling_config()
-    phantom_games = args.phantom_games or modeling_cfg.rating_engine.default_phantom_games
+    # `is not None`, not `or` -- --phantom-games 0 (pure results, no prior) is a valid override.
+    phantom_games = (
+        args.phantom_games if args.phantom_games is not None else modeling_cfg.rating_engine.default_phantom_games
+    )
+    eff_cfg = modeling_cfg.efficiency
+    if args.scoring_weight is not None:
+        scoring_weight = args.scoring_weight
+    else:
+        scoring_weight = eff_cfg.scoring_weight if eff_cfg.enabled else 1.0
 
     metadata = load_preseason_model_metadata()
     hfa = float(metadata["hfa"])
@@ -86,15 +115,63 @@ def main() -> None:
     games_so_far = _completed_games_through(engine, args.season, args.week)
     fbs_teams = _fbs_teams(engine, args.season)
 
-    blended = update_ratings(preseason_priors, games_so_far, hfa, fbs_teams, phantom_games=phantom_games)
+    logger.info(f"Pulling play-by-play efficiency for season={args.season} through week {args.week - 1}")
+    season_eff = team_game_frame(
+        load_team_game_efficiency(engine, [args.season], max_week=args.week, garbage=eff_cfg.garbage_time)
+    )
+    eff_margins = None
+    if scoring_weight != 1.0:
+        if season_eff.empty:
+            logger.warning("No play-by-play rows for this season in the DB -- falling back to scoring-only ratings.")
+            scoring_weight = 1.0
+        else:
+            calib_seasons = [
+                s for s in range(eff_cfg.calibration_start_season, args.season) if s not in modeling_cfg.excluded_seasons
+            ]
+            calibration = fit_efficiency_to_points(
+                engine, calib_seasons, {s: get_fbs_teams_by_season(engine, s) for s in calib_seasons},
+                garbage=eff_cfg.garbage_time,
+            )
+            logger.info(
+                f"Efficiency->points calibration ({calib_seasons[0]}-{calib_seasons[-1]}): "
+                f"{calibration.coef_epa:.2f} * net EPA/play + {calibration.coef_sr:.2f} * net success rate "
+                f"(R^2 {calibration.r2:.3f}, MAE {calibration.mae:.2f}, n={calibration.n_team_games})"
+            )
+            eff_margins = efficiency_margins(season_eff, calibration)
+
+    blended = update_ratings(
+        preseason_priors, games_so_far, hfa, fbs_teams, phantom_games=phantom_games,
+        efficiency_margins=eff_margins, scoring_weight=scoring_weight,
+    )
     blended.insert(0, "rank", range(1, len(blended) + 1))
+    # Tagged after the efficiency fallback above, so the filename reflects the weight actually used.
+    version = f"pg{phantom_games:g}_sw{scoring_weight:g}"
+
+    # Reporting-only offense/defense columns: season-to-date raw (play-weighted) and
+    # opponent/site-adjusted. None of these feed the rating itself.
+    if not season_eff.empty:
+        w_off = season_eff["off_plays"]
+        w_def = season_eff["def_plays"]
+        raw_eff = season_eff.assign(
+            _oe=season_eff["off_epa"] * w_off, _os=season_eff["off_sr"] * w_off,
+            _de=season_eff["def_epa_allowed"] * w_def, _ds=season_eff["def_sr_allowed"] * w_def,
+        ).groupby("team")[["_oe", "_os", "_de", "_ds", "off_plays", "def_plays"]].sum()
+        raw_eff = pd.DataFrame({
+            "off_epa": raw_eff["_oe"] / raw_eff["off_plays"], "off_sr": raw_eff["_os"] / raw_eff["off_plays"],
+            "def_epa_allowed": raw_eff["_de"] / raw_eff["def_plays"], "def_sr_allowed": raw_eff["_ds"] / raw_eff["def_plays"],
+        }).reset_index()
+        adj_eff = opponent_adjusted_off_def(season_eff, games_so_far, fbs_teams, modeling_cfg.srs.non_fbs_pool_name)
+        blended = blended.merge(raw_eff, on="team", how="left").merge(adj_eff, on="team", how="left")
 
     out_dir = OUTPUTS_RATINGS / str(args.season)
     out_dir.mkdir(parents=True, exist_ok=True)
-    ratings_path = out_dir / f"week_{args.week:02d}_ratings.csv"
+    ratings_path = out_dir / f"week_{args.week:02d}_ratings_{version}.csv"
     blended.to_csv(ratings_path, index=False)
-    print(f"Ratings through week {args.week - 1}, season {args.season} (top 25):")
-    print(blended.head(25).to_string(index=False))
+    print(
+        f"Ratings through week {args.week - 1}, season {args.season}, phantom_games={phantom_games:g}, "
+        f"scoring_weight={scoring_weight:g} (top 25):"
+    )
+    print(blended.head(25).to_string(index=False, float_format=lambda x: f"{x:.3f}"))
     print(f"\nWrote {ratings_path}")
 
     logger.info(f"Pulling week {args.week}'s real schedule live and scoring matchups")
@@ -124,7 +201,7 @@ def main() -> None:
         })
 
     matchups = pd.DataFrame(matchup_rows).sort_values("predicted_margin", ascending=False)
-    matchups_path = out_dir / f"week_{args.week:02d}_matchups.csv"
+    matchups_path = out_dir / f"week_{args.week:02d}_matchups_{version}.csv"
     matchups.to_csv(matchups_path, index=False)
     print(f"\nWeek {args.week} matchups ({len(matchups)} games):")
     print(matchups.to_string(index=False))

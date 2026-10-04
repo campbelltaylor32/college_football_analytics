@@ -36,8 +36,29 @@ srs:
 
 rating_engine:
   # Each team's preseason prior counts as this many "phantom games" against a league-average
-  # opponent in the in-season blended update (rating_engine.py::update_ratings) -- roughly
-  # fully faded out by week 8-10 at ~1 game/week. Not rigorously tuned; see
-  # scripts/backtest_season.py's sensitivity sweep and docs/assumptions_and_limitations.md.
-  default_phantom_games: 5
-  phantom_games_sweep: [3, 5, 8]
+  # opponent in the in-season blended update (rating_engine.py::update_ratings). May be
+  # fractional. Prior weight = phantom / (phantom + games_played): 1 puts a 4-game team at
+  # 20% preseason / 80% results (5 was the original default: ~56% / 44%). Not rigorously
+  # tuned; see scripts/backtest_season.py's sensitivity sweep and
+  # docs/assumptions_and_limitations.md.
+  default_phantom_games: 1
+  phantom_games_sweep: [1, 3, 5, 8]
+
+# --- Play-by-play efficiency blend (efficiency.py, rating_engine.py) ---
+efficiency:
+  enabled: true
+  # Share of each game's margin taken from the actual score; the rest comes from its
+  # efficiency-implied margin (net EPA/play + net success rate, both sides of the ball,
+  # converted to points by a regression fit on seasons strictly before the one being rated).
+  # 1.0 = scoring-only (the pre-efficiency rating). 0.75 had the lowest mean MAE vs actual
+  # margin in the 2021-2025 backtest sweep (tied-best at phantom_games 1, best at 3) -- the
+  # gain over 1.0 is small (~0.03-0.1 pts), largest at low phantom_games and in weeks 1-4.
+  scoring_weight: 0.75
+  scoring_weight_sweep: [1.0, 0.75, 0.5, 0.25, 0.0]
+  calibration_start_season: 2016
+  # Drop plays in period >= min_period where the offense's pre-snap win probability is
+  # outside [wp_low, wp_high]. Plays with no wp_before are kept.
+  garbage_time:
+    min_period: 3
+    wp_low: 0.05
+    wp_high: 0.95

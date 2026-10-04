@@ -77,6 +77,40 @@ for hurting model accuracy (see `docs/methodology.md`) — the corruption is rea
 after filtering, it appears to still be net-harmful for training seasons prior to ~2023, even
 though the feature would be reasonably clean for 2026 itself.
 
+## `talent_composite` missingness -- live fallback for the data, and a transition-team-aware imputer
+
+`team_talent` (the local DB table) can lag behind CFBD's own talent-composite endpoint --
+verified live: the DB had zero rows for season 2026 even after CFBD had already published real
+composites for all 138 FBS teams. `features/talent_recruiting.py` now falls back to a live
+CFBD pull (`live_data.fetch_team_talent`) for any season missing from the DB, so this shouldn't
+recur for a season CFBD has actually published.
+
+Separately, the ridge pipeline's imputer (`modeling/models.py::TransitionTeamAwareImputer`) is
+**row-conditional, not column-conditional**: a team-season is treated as a brand-new FBS
+transition whenever it has no prior-season FBS SRS at all (`srs_lag1` is NaN -- the case for a
+team that just moved up from FCS/a lower division, e.g. Sacramento State/North Dakota State
+entering 2026, or historically Coastal Carolina 2017, Delaware/Missouri State 2025). For that
+team's row, **every** missing feature (talent, SRS history, PPA stats, coaching history, not
+just talent) is filled with the training data's worst (minimum) observed value, not the median.
+Every other team-season -- including one missing just `srs_lag3` because it's only had 1-2 prior
+FBS seasons -- still gets ordinary median imputation for whatever it's missing; the transition
+case is the only one where "we have essentially zero real information about this team" is
+actually true, and median imputation would otherwise score that team as an average FBS roster,
+the wrong direction to be wrong in. Verified live before this fix: Sacramento State came back
+ranked #46 nationally under median imputation, an implausibly strong result. After both this
+imputer and the live-talent fallback above, Sacramento State/North Dakota State rank #120/#132
+of 138 -- correctly near the bottom of FBS, consistent with a first-year transition program.
+This also touched 12 historical team-seasons in the training data (the real FCS-to-FBS
+transitions of 2016-2025) -- re-running walk-forward evaluation with the new imputer showed a
+small genuine improvement (pooled MAE 6.412 -> 6.390), not a regression, so the change was kept
+for training too, not just for scoring 2026.
+
+Note this doesn't fully fix a new-transition team's rating: `srs_lag1-3`, `total_ppa`/`percent_
+ppa`, and `coach_career_win_pct_prior` remain median-imputed for a team like Sacramento State
+(no FBS SRS/PPA/coaching history exists to pull real values from), so its rating is still built
+substantially from "assume average" on those other features -- only the talent signal
+specifically has been corrected.
+
 ## No true future-season schedule strength adjustment
 
 Preseason ratings for a not-yet-started season (e.g. 2026) don't account for that season's
