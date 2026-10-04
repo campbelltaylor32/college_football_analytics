@@ -24,7 +24,8 @@ college_football_analytics/
 ├── cfb_rb_rushing_model/       weekly RB rushing-yards regression model
 ├── cfb_pythagorean_model/      retrospective Pythagorean win% analysis (2025 season)
 ├── cfb_talent_distribution/    recruiting-talent distribution analysis (2015-2025)
-└── cfb_transfer_portal_flow/   conference-level transfer-portal flow analysis (2021-2025)
+├── cfb_transfer_portal_flow/   conference-level transfer-portal flow analysis (2021-2025)
+└── cfb_qb_epa_tracker/         interactive 2026 QB cumulative-EPA tracker (weekly)
 ```
 
 Each `cfb_*` directory is a self-contained Python (or R) project with its own `README.md`,
@@ -187,6 +188,12 @@ Conference-level analysis of who's winning and losing on transfer-portal movemen
 Finds the Big 12 leads on both raw net talent gained and per-transfer quality delta, while the
 SEC and Big Ten post negative raw net talent (roster-crunch churn) but still clearly trade up in
 quality per transfer.
+
+### [`cfb_qb_epa_tracker/`](cfb_qb_epa_tracker/README.md)
+Week-by-week cumulative EPA for every qualifying 2026 FBS starting quarterback, built from
+cfbfastR play-by-play. Produces an interactive page (headshots, Power 4 / Group of 5 /
+conference filters, top/bottom 10 highlight, trending risers and fallers) and a static ggplot.
+Refreshed by the Sunday results workflow and published as the site's CFB QB Tracker.
 
 ---
 

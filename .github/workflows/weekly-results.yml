@@ -90,6 +90,8 @@ jobs:
             any::jsonlite
             any::ggimage
             any::scales
+            any::httr
+            any::colorspace
 
       - name: Restore MySQL
         if: steps.weeks.outputs.run == 'true'
@@ -120,6 +122,16 @@ jobs:
           Rscript cfb_power_ratings/scripts/plot_preseason_top25.R "$S" "$U" "$RATINGS_TAG"
           Rscript cfb_power_ratings/scripts/plot_conference_rankings.R "$S" "$U" "$RATINGS_TAG"
 
+      - name: QB tracker
+        if: steps.weeks.outputs.run == 'true'
+        # Optional tool: if this fails, the site builder skips the tracker and the rest still publishes.
+        continue-on-error: true
+        env:
+          CFB_SEASON: ${{ steps.weeks.outputs.season }}
+        run: |
+          Rscript cfb_qb_epa_tracker/pull_qb_data.R
+          Rscript cfb_qb_epa_tracker/qb_epa_analysis.R
+
       - name: Team Dashboard data
         if: steps.weeks.outputs.run == 'true'
         working-directory: site
@@ -138,6 +150,7 @@ jobs:
           quarto render tools/cfb-picks.qmd
           quarto render tools/cfb-power-rankings.qmd
           quarto render tools/cfb-dashboard.qmd
+          quarto render tools/qb-tracker.qmd
 
       - name: Publish
         if: steps.weeks.outputs.run == 'true' && (github.event_name == 'schedule' || inputs.push)
