@@ -174,11 +174,52 @@ def add_opponent_adjusted_features(frame: pd.DataFrame, feature_columns: list[st
     return frame, feature_columns + new_col_names  # additive - raw columns are kept, see module docstring
 
 
-def apply_engineered_features(frame: pd.DataFrame, feature_columns: list[str]) -> tuple[pd.DataFrame, list[str]]:
-    """Orchestrates all three recommendations, in order. Called from
+# --- Experimental: workload/fatigue composite (see CFB_EXPERIMENT / experiment_paths.py) --
+# Total_Offense_Plays / Total_Defense_Plays already exist as raw candidate base stats (ported
+# from the R source's offense_epa/defense_epa summarise() blocks - see ingest/pbp_features.py)
+# and already flow through the standard prev_week/avg_all/avg3 lag pipeline, unfiltered, into
+# feature_columns.json - so no new raw data is needed here. This adds one derived signal on
+# top of those existing columns: total offensive+defensive snaps run/faced, per side per
+# transform - a single combined "how much did this team's roster do on the field" figure,
+# rather than making the model recover that sum itself from two separate columns. avg3 gives
+# the "accumulated over recent games" reading; prev_week gives the single-most-recent-game
+# reading.
+WORKLOAD_OFFENSE_STAT = "Total_Offense_Plays"
+WORKLOAD_DEFENSE_STAT = "Total_Defense_Plays"
+
+
+def add_fatigue_and_rest_features(frame: pd.DataFrame, feature_columns: list[str]) -> tuple[pd.DataFrame, list[str]]:
+    new_cols: dict[str, pd.Series] = {}
+    new_col_names: list[str] = []
+
+    for prefix in PREFIXES:
+        for transform in TRANSFORMS:
+            off_col = _col(prefix, transform, WORKLOAD_OFFENSE_STAT)
+            def_col = _col(prefix, transform, WORKLOAD_DEFENSE_STAT)
+            if off_col not in frame.columns or def_col not in frame.columns:
+                continue  # this (prefix, transform) combination isn't part of the current candidate set
+            new_col = f"{prefix}total_snaps_{transform}"
+            new_cols[new_col] = frame[off_col] + frame[def_col]
+            new_col_names.append(new_col)
+
+    frame = pd.concat([frame, pd.DataFrame(new_cols, index=frame.index)], axis=1)
+    return frame, feature_columns + new_col_names  # additive - raw columns are kept, see module docstring
+
+
+def apply_engineered_features(
+    frame: pd.DataFrame, feature_columns: list[str], *, include_fatigue_features: bool = False
+) -> tuple[pd.DataFrame, list[str]]:
+    """Orchestrates all engineered-feature families, in order. Called from
     load_and_validate_dataset.py via cleaning.build_clean_modeling_frame's
-    feature_engineering_fn hook."""
+    feature_engineering_fn hook, and directly from cleaning.prepare_week_frame.
+
+    include_fatigue_features defaults to False so every existing caller (including the live
+    weekly-prediction path) is unaffected unless it opts in explicitly - see
+    experiment_paths.include_experimental_features(), which ties this to the same
+    CFB_EXPERIMENT switch that redirects this experiment's outputs to an isolated directory."""
     frame, feature_columns = consolidate_returning_production(frame, feature_columns)
     frame, feature_columns = consolidate_special_teams(frame, feature_columns)
     frame, feature_columns = add_opponent_adjusted_features(frame, feature_columns)
+    if include_fatigue_features:
+        frame, feature_columns = add_fatigue_and_rest_features(frame, feature_columns)
     return frame, feature_columns

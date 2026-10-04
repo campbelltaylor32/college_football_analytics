@@ -1,0 +1,222 @@
+[
+  {
+    "phantom_games": 1.0,
+    "scoring_weight": 0.0,
+    "mean_mae_vs_market_all_weeks": 6.508461318649656,
+    "mean_mae_vs_actual_all_weeks": 14.518855135288147,
+    "mean_brier_all_weeks": 0.2365104501441987,
+    "mean_mae_vs_market_weeks_1_4": 6.795119553732593,
+    "mean_mae_vs_market_weeks_5_plus": 6.404221960437678,
+    "mean_mae_vs_actual_weeks_1_4": 14.213804646910035,
+    "mean_mae_vs_actual_weeks_5_plus": 14.62978258560746
+  },
+  {
+    "phantom_games": 1.0,
+    "scoring_weight": 0.25,
+    "mean_mae_vs_market_all_weeks": 5.943775395521679,
+    "mean_mae_vs_actual_all_weeks": 14.308163101362911,
+    "mean_brier_all_weeks": 0.23387781608169508,
+    "mean_mae_vs_market_weeks_1_4": 6.226684213605639,
+    "mean_mae_vs_market_weeks_5_plus": 5.840899461672965,
+    "mean_mae_vs_actual_weeks_1_4": 13.827563646191846,
+    "mean_mae_vs_actual_weeks_5_plus": 14.482926539606934
+  },
+  {
+    "phantom_games": 1.0,
+    "scoring_weight": 0.5,
+    "mean_mae_vs_market_all_weeks": 5.606684594299595,
+    "mean_mae_vs_actual_all_weeks": 14.19664313100544,
+    "mean_brier_all_weeks": 0.2331634874224483,
+    "mean_mae_vs_market_weeks_1_4": 5.848359799473162,
+    "mean_mae_vs_market_weeks_5_plus": 5.518802701509207,
+    "mean_mae_vs_actual_weeks_1_4": 13.628423437068285,
+    "mean_mae_vs_actual_weeks_5_plus": 14.403268474255315
+  },
+  {
+    "phantom_games": 1.0,
+    "scoring_weight": 0.75,
+    "mean_mae_vs_market_all_weeks": 5.572383195527983,
+    "mean_mae_vs_actual_all_weeks": 14.2553377739265,
+    "mean_brier_all_weeks": 0.23464295644215663,
+    "mean_mae_vs_market_weeks_1_4": 5.865101463590779,
+    "mean_mae_vs_market_weeks_5_plus": 5.465940188959694,
+    "mean_mae_vs_actual_weeks_1_4": 13.848281953282319,
+    "mean_mae_vs_actual_weeks_5_plus": 14.403358072342568
+  },
+  {
+    "phantom_games": 1.0,
+    "scoring_weight": 1.0,
+    "mean_mae_vs_market_all_weeks": 5.875678348238807,
+    "mean_mae_vs_actual_all_weeks": 14.443276035854627,
+    "mean_brier_all_weeks": 0.2380641247612765,
+    "mean_mae_vs_market_weeks_1_4": 6.371477195803783,
+    "mean_mae_vs_market_weeks_5_plus": 5.695387858215179,
+    "mean_mae_vs_actual_weeks_1_4": 14.2662609670759,
+    "mean_mae_vs_actual_weeks_5_plus": 14.507645151774163
+  },
+  {
+    "phantom_games": 3.0,
+    "scoring_weight": 0.0,
+    "mean_mae_vs_market_all_weeks": 5.619759180429332,
+    "mean_mae_vs_actual_all_weeks": 14.078085499535199,
+    "mean_brier_all_weeks": 0.23114951874662237,
+    "mean_mae_vs_market_weeks_1_4": 5.0023670685931485,
+    "mean_mae_vs_market_weeks_5_plus": 5.844265402915216,
+    "mean_mae_vs_actual_weeks_1_4": 13.03384973160672,
+    "mean_mae_vs_actual_weeks_5_plus": 14.457807596963733
+  },
+  {
+    "phantom_games": 3.0,
+    "scoring_weight": 0.25,
+    "mean_mae_vs_market_all_weeks": 5.19116970617107,
+    "mean_mae_vs_actual_all_weeks": 13.96821167286585,
+    "mean_brier_all_weeks": 0.22936864039690277,
+    "mean_mae_vs_market_weeks_1_4": 4.63819607862014,
+    "mean_mae_vs_market_weeks_5_plus": 5.3922510252805,
+    "mean_mae_vs_actual_weeks_1_4": 12.902251379832226,
+    "mean_mae_vs_actual_weeks_5_plus": 14.355833597605356
+  },
+  {
+    "phantom_games": 3.0,
+    "scoring_weight": 0.5,
+    "mean_mae_vs_market_all_weeks": 4.943433252825789,
+    "mean_mae_vs_actual_all_weeks": 13.937969528141151,
+    "mean_brier_all_weeks": 0.22872757097703436,
+    "mean_mae_vs_market_weeks_1_4": 4.426143702270666,
+    "mean_mae_vs_market_weeks_5_plus": 5.1315385439367445,
+    "mean_mae_vs_actual_weeks_1_4": 12.940274357329127,
+    "mean_mae_vs_actual_weeks_5_plus": 14.3007677720728
+  },
+  {
+    "phantom_games": 3.0,
+    "scoring_weight": 0.75,
+    "mean_mae_vs_market_all_weeks": 4.901847134989383,
+    "mean_mae_vs_actual_all_weeks": 13.951735516382165,
+    "mean_brier_all_weeks": 0.2292377733446407,
+    "mean_mae_vs_market_weeks_1_4": 4.459719136084095,
+    "mean_mae_vs_market_weeks_5_plus": 5.062620952773124,
+    "mean_mae_vs_actual_weeks_1_4": 13.028171762544167,
+    "mean_mae_vs_actual_weeks_5_plus": 14.287576881414166
+  },
+  {
+    "phantom_games": 3.0,
+    "scoring_weight": 1.0,
+    "mean_mae_vs_market_all_weeks": 5.0433326753616425,
+    "mean_mae_vs_actual_all_weeks": 14.040945036058899,
+    "mean_brier_all_weeks": 0.23084712355768938,
+    "mean_mae_vs_market_weeks_1_4": 4.670247081575299,
+    "mean_mae_vs_market_weeks_5_plus": 5.179000164011222,
+    "mean_mae_vs_actual_weeks_1_4": 13.211707884847963,
+    "mean_mae_vs_actual_weeks_5_plus": 14.342485818317419
+  },
+  {
+    "phantom_games": 5.0,
+    "scoring_weight": 0.0,
+    "mean_mae_vs_market_all_weeks": 5.469365272599571,
+    "mean_mae_vs_actual_all_weeks": 14.039884755608771,
+    "mean_brier_all_weeks": 0.23060646315330124,
+    "mean_mae_vs_market_weeks_1_4": 4.621605507566597,
+    "mean_mae_vs_market_weeks_5_plus": 5.77764155079338,
+    "mean_mae_vs_actual_weeks_1_4": 12.840573053391207,
+    "mean_mae_vs_actual_weeks_5_plus": 14.475998101869703
+  },
+  {
+    "phantom_games": 5.0,
+    "scoring_weight": 0.25,
+    "mean_mae_vs_market_all_weeks": 5.162076353679061,
+    "mean_mae_vs_actual_all_weeks": 13.98883477979938,
+    "mean_brier_all_weeks": 0.22929896202193203,
+    "mean_mae_vs_market_weeks_1_4": 4.3924147850279915,
+    "mean_mae_vs_market_weeks_5_plus": 5.441953287733995,
+    "mean_mae_vs_actual_weeks_1_4": 12.838671010537436,
+    "mean_mae_vs_actual_weeks_5_plus": 14.407076150440083
+  },
+  {
+    "phantom_games": 5.0,
+    "scoring_weight": 0.5,
+    "mean_mae_vs_market_all_weeks": 4.967447451462177,
+    "mean_mae_vs_actual_all_weeks": 13.962388747651783,
+    "mean_brier_all_weeks": 0.22874425857769662,
+    "mean_mae_vs_market_weeks_1_4": 4.27518812078922,
+    "mean_mae_vs_market_weeks_5_plus": 5.219178117161434,
+    "mean_mae_vs_actual_weeks_1_4": 12.859579127349914,
+    "mean_mae_vs_actual_weeks_5_plus": 14.363410427761552
+  },
+  {
+    "phantom_games": 5.0,
+    "scoring_weight": 0.75,
+    "mean_mae_vs_market_all_weeks": 4.917458375815683,
+    "mean_mae_vs_actual_all_weeks": 13.955347592410364,
+    "mean_brier_all_weeks": 0.22894215056229122,
+    "mean_mae_vs_market_weeks_1_4": 4.29472314594918,
+    "mean_mae_vs_market_weeks_5_plus": 5.143907550312593,
+    "mean_mae_vs_actual_weeks_1_4": 12.896407437081141,
+    "mean_mae_vs_actual_weeks_5_plus": 14.34041673980281
+  },
+  {
+    "phantom_games": 5.0,
+    "scoring_weight": 1.0,
+    "mean_mae_vs_market_all_weeks": 4.977828150487246,
+    "mean_mae_vs_actual_all_weeks": 13.99768310119303,
+    "mean_brier_all_weeks": 0.2298763128379009,
+    "mean_mae_vs_market_weeks_1_4": 4.404408859883196,
+    "mean_mae_vs_market_weeks_5_plus": 5.186344256161447,
+    "mean_mae_vs_actual_weeks_1_4": 12.983793302397736,
+    "mean_mae_vs_actual_weeks_5_plus": 14.366370300754955
+  },
+  {
+    "phantom_games": 8.0,
+    "scoring_weight": 0.0,
+    "mean_mae_vs_market_all_weeks": 5.552013255314176,
+    "mean_mae_vs_actual_all_weeks": 14.109985525458853,
+    "mean_brier_all_weeks": 0.23157918332531577,
+    "mean_mae_vs_market_weeks_1_4": 4.5326282062610215,
+    "mean_mae_vs_market_weeks_5_plus": 5.9226987276971395,
+    "mean_mae_vs_actual_weeks_1_4": 12.85241173347618,
+    "mean_mae_vs_actual_weeks_5_plus": 14.567285086179828
+  },
+  {
+    "phantom_games": 8.0,
+    "scoring_weight": 0.25,
+    "mean_mae_vs_market_all_weeks": 5.330075849705196,
+    "mean_mae_vs_actual_all_weeks": 14.071830233662816,
+    "mean_brier_all_weeks": 0.23066016623533087,
+    "mean_mae_vs_market_weeks_1_4": 4.381389326203838,
+    "mean_mae_vs_market_weeks_5_plus": 5.675052767342054,
+    "mean_mae_vs_actual_weeks_1_4": 12.849431269521148,
+    "mean_mae_vs_actual_weeks_5_plus": 14.51633894789615
+  },
+  {
+    "phantom_games": 8.0,
+    "scoring_weight": 0.5,
+    "mean_mae_vs_market_all_weeks": 5.20039338032995,
+    "mean_mae_vs_actual_all_weeks": 14.04711651983123,
+    "mean_brier_all_weeks": 0.2302090273621783,
+    "mean_mae_vs_market_weeks_1_4": 4.31201373285577,
+    "mean_mae_vs_market_weeks_5_plus": 5.523440524866015,
+    "mean_mae_vs_actual_weeks_1_4": 12.856850560288969,
+    "mean_mae_vs_actual_weeks_5_plus": 14.479940505119323
+  },
+  {
+    "phantom_games": 8.0,
+    "scoring_weight": 0.75,
+    "mean_mae_vs_market_all_weeks": 5.1378563808633375,
+    "mean_mae_vs_actual_all_weeks": 14.038535465991181,
+    "mean_brier_all_weeks": 0.23022464579758484,
+    "mean_mae_vs_market_weeks_1_4": 4.318926341173491,
+    "mean_mae_vs_market_weeks_5_plus": 5.435649122568736,
+    "mean_mae_vs_actual_weeks_1_4": 12.879277144126435,
+    "mean_mae_vs_actual_weeks_5_plus": 14.460083946669272
+  },
+  {
+    "phantom_games": 8.0,
+    "scoring_weight": 1.0,
+    "mean_mae_vs_market_all_weeks": 5.140630305517663,
+    "mean_mae_vs_actual_all_weeks": 14.055605410841965,
+    "mean_brier_all_weeks": 0.23069991198163695,
+    "mean_mae_vs_market_weeks_1_4": 4.381196717069553,
+    "mean_mae_vs_market_weeks_5_plus": 5.416787974044249,
+    "mean_mae_vs_actual_weeks_1_4": 12.915260915294551,
+    "mean_mae_vs_actual_weeks_5_plus": 14.470276136495574
+  }
+]

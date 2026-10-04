@@ -21,6 +21,11 @@ OUTPUTS_EDA = OUTPUTS_DIR / "eda"
 OUTPUTS_MODEL_COMPARISON = OUTPUTS_DIR / "model_comparison"
 OUTPUTS_MODELS = OUTPUTS_DIR / "models"
 OUTPUTS_RATINGS = OUTPUTS_DIR / "ratings"
+# Honest out-of-sample preseason-rating series by season, for cross-project consumption (e.g.
+# cfb_win_total_model's diagnostic power_rating feature) -- distinct from OUTPUTS_RATINGS'
+# per-season week_00/week_N snapshots, which reflect whichever model was live when generated.
+OUTPUTS_RATINGS_HISTORY = OUTPUTS_RATINGS / "history"
+OUTPUTS_SCHEDULE_STRENGTH = OUTPUTS_DIR / "schedule_strength"
 
 ALL_OUTPUT_DIRS = (
     DATA_INTERIM_DIR,
@@ -29,6 +34,8 @@ ALL_OUTPUT_DIRS = (
     OUTPUTS_MODEL_COMPARISON,
     OUTPUTS_MODELS,
     OUTPUTS_RATINGS,
+    OUTPUTS_RATINGS_HISTORY,
+    OUTPUTS_SCHEDULE_STRENGTH,
 )
 
 

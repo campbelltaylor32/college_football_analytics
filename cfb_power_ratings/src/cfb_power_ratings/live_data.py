@@ -32,6 +32,19 @@ def fetch_games(client, season: int, week: int) -> pd.DataFrame:
     return pd.DataFrame([_game_to_row(g) for g in games])
 
 
+def fetch_season_schedule(client, season: int) -> pd.DataFrame:
+    """The full season's schedule in one call (CFBD's `week` filter is optional) -- every FBS
+    game, completed or not. Used for schedule-strength analysis, where the whole season's slate
+    is needed up front rather than one week at a time."""
+    import cfbd
+
+    api = cfbd.GamesApi(client)
+    games = api.get_games(year=season, classification="fbs")
+    if not games:
+        return pd.DataFrame(columns=["game_id", "season", "week", "home_team", "away_team", "home_points", "away_points", "home_division", "away_division", "neutral_site", "completed"])
+    return pd.DataFrame([_game_to_row(g) for g in games])
+
+
 def fetch_completed_games(client, season: int, weeks: list[int]) -> pd.DataFrame:
     frames = [fetch_games(client, season, w) for w in weeks]
     df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
@@ -47,3 +60,17 @@ def fetch_fbs_teams(client, season: int) -> set[str]:
         t.school for t in teams
         if str(getattr(t.classification, "value", t.classification)).lower() == "fbs"
     }
+
+
+def fetch_team_talent(client, season: int) -> pd.DataFrame:
+    """Team talent composite for a season straight from CFBD -- used when the local DB's
+    team_talent table has no rows for that season yet (verified live: true for 2026 as of this
+    writing, even though CFBD's own talent endpoint already has the real composite for every
+    team). Same shape as talent_recruiting.py's DB query: columns season, team, talent_composite."""
+    import cfbd
+
+    api = cfbd.TeamsApi(client)
+    talent = api.get_talent(year=season)
+    if not talent:
+        return pd.DataFrame(columns=["season", "team", "talent_composite"])
+    return pd.DataFrame([{"season": t.year, "team": t.team, "talent_composite": t.talent} for t in talent])

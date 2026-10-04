@@ -1,6 +1,11 @@
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 
 @pytest.fixture
@@ -36,6 +41,49 @@ def synthetic_results_csv(tmp_path, rng):
     path = tmp_path / "results.csv"
     df.to_csv(path, index=False)
     return path, df, seasons
+
+
+@pytest.fixture
+def tiny_production_artifact(rng):
+    """A small but real ProductionArtifact - actual fitted sklearn estimators (LogisticRegression
+    + ElasticNet-based ResidualProbabilityRegressor, not xgboost, so this fixture has no
+    boosting-extra dependency), 4 feature columns, fit on 60 synthetic rows. Used by
+    test_serving_artifact.py (persistence round-trip) and test_serving_scoring.py (score_week's
+    output-shaping logic, with build_feature_frame monkeypatched so this fixture never needs to
+    survive the real feature-engineering pipeline)."""
+    from sklearn.linear_model import ElasticNet, LogisticRegression
+
+    from cfb_cover_model.modeling.regressor import ResidualProbabilityRegressor
+    from cfb_cover_model.serving.artifact import ProductionArtifact
+    from datetime import datetime, timezone
+
+    n = 60
+    selected_columns = ["diff_feature_a", "diff_feature_b", "diff_feature_c", "diff_feature_d"]
+    X = pd.DataFrame(rng.normal(0, 1, (n, len(selected_columns))), columns=selected_columns)
+    y = (X["diff_feature_a"] + rng.normal(0, 0.5, n) > 0).astype(int)
+    margin = X["diff_feature_a"] * 5 + rng.normal(0, 3, n)
+
+    classifier = LogisticRegression(max_iter=1000).fit(X, y)
+    regressor = ResidualProbabilityRegressor(ElasticNet(alpha=0.5, l1_ratio=0.5, max_iter=5000)).fit(X, margin)
+
+    return ProductionArtifact(
+        version="v2025w1_20260101T000000Z",
+        trained_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        season_through=2025,
+        week_through=1,
+        classifier=classifier,
+        regressor=regressor,
+        selected_columns=selected_columns,
+        feature_columns=selected_columns,
+        transforms=["prev_week"],
+        representation="differential",
+        classifier_threshold=0.56,
+        regressor_threshold=0.60,
+        reference_training_frame=X,
+        training_row_count=n,
+        git_commit="deadbeef",
+        library_versions={"pandas": pd.__version__},
+    )
 
 
 @pytest.fixture

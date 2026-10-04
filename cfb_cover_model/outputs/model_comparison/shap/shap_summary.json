@@ -1,0 +1,9 @@
+{
+  "artifact_version": "v2026w4_20260930T002122Z",
+  "rows_explained": 2274,
+  "n_lr_flags": 642,
+  "n_xgb_flags": 781,
+  "n_agreement_bets": 367,
+  "rank_corr_lr_vs_xgb_importance": 0.4316198944151154,
+  "lr_vs_xgb_output_corr": 0.4243172948685512
+}

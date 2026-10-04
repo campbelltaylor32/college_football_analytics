@@ -1,0 +1,175 @@
+# Sunday: publish the week that just finished.
+#   - grade last week's picks (the record on the Weekly Picks page)
+#   - power ratings through that week (+ top-25 / conference charts)
+#   - Team Dashboard stats through that week
+# Then commit the analytics outputs here, push the rebuilt pages to the site repo, and save the
+# gitignored state (CFBD cache, production artifacts, MySQL dump) back to the pipeline-state release.
+# Next week's picks are a separate Tuesday job (weekly-picks.yml).
+name: Weekly results (Sunday)
+
+on:
+  schedule:
+    - cron: "0 15 * * 0"   # Sun 15:00 UTC = 10-11am ET, after the West Coast late games are final
+  workflow_dispatch:
+    inputs:
+      season:
+        description: Season (blank = from the CFBD calendar)
+        required: false
+      completed_week:
+        description: Week that just finished (blank = from the CFBD calendar; set it to re-run a week)
+        required: false
+      push:
+        description: Push to the site and to main (uncheck for a dry run)
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # commit outputs to this repo + update the pipeline-state release
+
+concurrency:
+  group: cfb-pipeline
+  cancel-in-progress: false
+
+env:
+  CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+  GH_TOKEN: ${{ github.token }}
+  RATINGS_TAG: pg1_sw0.75
+  CFB_DB_HOST: 127.0.0.1
+  CFB_DB_PORT: "3306"
+  CFB_DB_USER: root
+  CFB_DB_PASSWORD: cfb
+  CFB_DB_NAME: cfb_football
+
+jobs:
+  results:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      mysql:
+        image: mysql:9
+        env:
+          MYSQL_ROOT_PASSWORD: cfb
+          MYSQL_DATABASE: cfb_football
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pcfb"
+          --health-interval=10s --health-timeout=5s --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/cfb-setup
+        with:
+          site-token: ${{ secrets.SITE_REPO_TOKEN }}
+
+      - name: Resolve weeks
+        id: weeks
+        env:
+          SEASON: ${{ inputs.season }}
+          COMPLETED_WEEK: ${{ inputs.completed_week }}
+        run: cfb_cover_model/.venv/bin/python ci/resolve_weeks.py results
+
+      - name: Set up R
+        if: steps.weeks.outputs.run == 'true'
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: R packages
+        if: steps.weeks.outputs.run == 'true'
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::cfbfastR
+            any::tidyverse
+            any::data.table
+            any::DBI
+            any::RMariaDB
+            any::jsonlite
+            any::ggimage
+            any::scales
+
+      - name: Restore MySQL
+        if: steps.weeks.outputs.run == 'true'
+        run: ci/state.sh restore-db
+
+      - name: Ingest finished week into MySQL
+        if: steps.weeks.outputs.run == 'true'
+        env:
+          CURRENT_SEASON: ${{ steps.weeks.outputs.season }}
+          CURRENT_WEEK: ${{ steps.weeks.outputs.completed }}
+        run: Rscript "SQL Scripts/ingest_to_mysql.R"
+
+      - name: Cover model - ingest results + monitoring
+        if: steps.weeks.outputs.run == 'true'
+        working-directory: cfb_cover_model
+        run: >-
+          .venv/bin/python scripts/run_weekly.py --only ingest,monitor
+          --season ${{ steps.weeks.outputs.season }}
+          --completed-week ${{ steps.weeks.outputs.completed }}
+          --upcoming-week ${{ steps.weeks.outputs.upcoming }}
+
+      - name: Power ratings
+        if: steps.weeks.outputs.run == 'true'
+        run: |
+          S=${{ steps.weeks.outputs.season }}; U=${{ steps.weeks.outputs.upcoming }}
+          cfb_power_ratings/.venv/bin/python cfb_power_ratings/scripts/update_ratings.py \
+            --season "$S" --week "$U" --phantom-games 1 --scoring-weight 0.75
+          Rscript cfb_power_ratings/scripts/plot_preseason_top25.R "$S" "$U" "$RATINGS_TAG"
+          Rscript cfb_power_ratings/scripts/plot_conference_rankings.R "$S" "$U" "$RATINGS_TAG"
+
+      - name: Team Dashboard data
+        if: steps.weeks.outputs.run == 'true'
+        working-directory: site
+        env:
+          CFB_SEASON: ${{ steps.weeks.outputs.season }}
+          THROUGH_WEEK: ${{ steps.weeks.outputs.completed }}
+        run: Rscript tools/build_cfb_dashboard_data.R
+
+      - name: Build + render site pages
+        if: steps.weeks.outputs.run == 'true'
+        working-directory: site
+        run: |
+          ../cfb_cover_model/.venv/bin/python tools/build_cfb_weekly_tools.py \
+            --season ${{ steps.weeks.outputs.season }} --analytics-dir "$GITHUB_WORKSPACE" --tag "$RATINGS_TAG"
+          # one page per command: Quarto 1.8 errors on multiple paths
+          quarto render tools/cfb-picks.qmd
+          quarto render tools/cfb-power-rankings.qmd
+          quarto render tools/cfb-dashboard.qmd
+
+      - name: Publish
+        if: steps.weeks.outputs.run == 'true' && (github.event_name == 'schedule' || inputs.push)
+        run: |
+          MSG="Weekly CFB refresh: ${{ steps.weeks.outputs.season }} week ${{ steps.weeks.outputs.completed }} results"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add cfb_cover_model/outputs cfb_power_ratings/outputs
+          git diff --cached --quiet || git commit -q -m "$MSG"
+          git push origin HEAD:main
+
+          cd site
+          git add tools docs
+          git diff --cached --quiet || git commit -q -m "$MSG"
+          git push origin HEAD:main
+          cd ..
+
+          ci/state.sh pack-cover
+          ci/state.sh dump-db
+          ci/state.sh upload
+
+      - name: Dry-run artifacts
+        if: steps.weeks.outputs.run == 'true' && github.event_name == 'workflow_dispatch' && !inputs.push
+        uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-site-tools
+          path: |
+            site/tools
+            site/docs/tools
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Weekly results" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ${{ steps.weeks.outputs.reason }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ran: ${{ steps.weeks.outputs.run }}" >> "$GITHUB_STEP_SUMMARY"

@@ -138,6 +138,48 @@ faded out by week 8-10" default, then verified (not just assumed) via
 `scripts/backtest_season.py`'s 3/5/8 sensitivity sweep on the 2024 season: 5 had the lowest
 market-spread MAE and Brier score of the three tested.
 
+### 4b. Play-by-play efficiency blend (`efficiency.py`)
+
+Points over a 3-4 game sample are noisy (turnovers, return TDs, garbage-time scoring, uncapped
+blowouts). Each team-game therefore also gets an **efficiency-implied margin** built from both
+sides of the ball:
+
+- From `plays`, scrimmage plays only (`SCRIMMAGE_PLAY_TYPES`: runs, passes, sacks, turnovers —
+  no special teams, no-play penalties or admin rows). Garbage time is dropped: plays in
+  period >= 3 with the offense's `wp_before` outside [0.05, 0.95]; null `wp_before` kept.
+- Per game: `epa_net = off EPA/play − EPA/play allowed`, `sr_net = off success rate − success
+  rate allowed` (a team's "allowed" numbers are its opponent's offensive row).
+- Converted to points by a no-intercept OLS of actual raw margin on `[epa_net, sr_net]` across
+  FBS-vs-FBS games from `calibration_start_season` through the season **before** the one being
+  rated (no lookahead). Fit on 2016-2025 (ex. 2020): `margin ≈ 34.9·epa_net + 28.7·sr_net`,
+  R² 0.77, MAE 7.8 points. Coefficients are stable across the backtest's expanding windows
+  (EPA 35.4-36.3, SR 25.0-26.1).
+
+Each game's raw margin becomes `scoring_weight·actual + (1 − scoring_weight)·efficiency`
+(games with no play data fall back to actual), then goes through the same home-field
+correction, opponent-adjusted iteration and phantom-game prior as before. `scoring_weight = 1`
+is exactly the scoring-only rating.
+
+The ratings CSV also carries reporting-only offense/defense columns: season-to-date raw
+`off_epa`/`def_epa_allowed`/`off_sr`/`def_sr_allowed`, and opponent- and site-adjusted
+`adj_off_*`/`adj_def_*` from a small ridge fit (`off_metric ≈ μ + O_team + D_opponent + h·site`).
+These describe a team; they don't feed the rating.
+
+**Backtest (2021-2025, 5 seasons, mean MAE vs actual margin, all weeks):**
+
+| phantom games | sw 1.0 (scoring only) | 0.75 | 0.5 | 0.25 | 0.0 (efficiency only) |
+|---|---|---|---|---|---|
+| 1 | 13.01 | 12.91 | **12.91** | 13.04 | 13.26 |
+| 3 | 12.68 | **12.65** | 12.68 | 12.77 | 12.92 |
+| 5 | **12.66** | 12.66 | 12.70 | 12.78 | 12.90 |
+| 8 | **12.74** | 12.76 | 12.80 | 12.87 | 12.95 |
+
+Efficiency alone is worse than scores alone. A 25% efficiency blend is a small, real gain when the
+prior is weak (1-3 phantom games: 0.03-0.10 points, larger in weeks 1-4) and roughly neutral at 5+,
+where the preseason prior already provides the stabilization efficiency would. Vs market spreads
+the pattern is the same (best: 3 phantom games / 0.75, 4.12 MAE vs 4.18 scoring-only). Default
+`scoring_weight` is 0.75.
+
 ## 5. Win probability
 
 `P(home win) = Φ(predicted_margin / residual_std)` — the identical methodology

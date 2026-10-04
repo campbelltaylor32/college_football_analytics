@@ -73,6 +73,40 @@ def test_more_games_played_fades_prior_weight_monotonically():
     assert weight_after_2 < weight_after_1
 
 
+def test_whole_number_phantom_weight_matches_repeated_phantom_rows():
+    """The prior is one weighted row per team rather than `phantom_games` repeated rows --
+    for whole numbers the two must give identical ratings."""
+    from cfb_power_ratings.rating_engine import LEAGUE_AVERAGE
+    from cfb_power_ratings.srs import games_to_team_game_frame, iterate_ratings, site_adjusted_margin
+
+    priors = pd.Series({"A": 6.0, "B": -2.0, "C": 1.0})
+    games = pd.DataFrame([
+        _game(1, "A", "B", 30, 10), _game(2, "C", "A", 24, 21), _game(3, "B", "C", 14, 10),
+    ])
+    teams = ["A", "B", "C"]
+    tg = games_to_team_game_frame(games)
+    repeated = pd.concat([
+        pd.DataFrame({"team": tg["team"], "opp": tg["opponent"], "margin": site_adjusted_margin(tg, 0.0)}),
+        pd.DataFrame({"team": np.repeat(teams, 5), "opp": LEAGUE_AVERAGE, "margin": np.repeat(priors[teams].values, 5)}),
+    ], ignore_index=True)
+    expected = iterate_ratings(
+        teams, repeated["team"].values, repeated["opp"].values, repeated["margin"].astype(float).values,
+        fixed_opponent_ratings={LEAGUE_AVERAGE: 0.0},
+    )
+
+    got = update_ratings(priors, games, hfa=0.0, fbs_teams=set(teams), phantom_games=5).set_index("team")["rating"]
+    pd.testing.assert_series_equal(got.reindex(teams), expected.reindex(teams), check_names=False, atol=1e-9)
+
+
+def test_fractional_phantom_games_gives_70_30_split_at_three_games():
+    priors = pd.Series({"A": 0.0, "B": 0.0, "C": 0.0})
+    three_games = pd.DataFrame([
+        _game(1, "A", "B", 30, 10), _game(2, "A", "C", 20, 17), _game(3, "C", "A", 14, 10),
+    ])
+    result = update_ratings(priors, three_games, hfa=0.0, fbs_teams={"A", "B", "C"}, phantom_games=9 / 7)
+    assert result.set_index("team").loc["A", "effective_prior_weight"] == pytest.approx(0.30)
+
+
 def test_implied_matchup_favors_higher_rated_home_team():
     result = implied_matchup(rating_home=10.0, rating_away=3.0, hfa=2.0)
     assert result["predicted_margin"] == pytest.approx(9.0)
@@ -106,3 +140,53 @@ def test_fit_residual_std_recovers_known_spread():
 
 def test_fit_residual_std_never_returns_zero():
     assert fit_residual_std(np.array([1.0, 1.0]), np.array([1.0, 1.0])) == 1.0
+
+
+def _blend_fixture():
+    priors = pd.Series({"A": 3.0, "B": -1.0, "C": 0.5})
+    games = pd.DataFrame([
+        _game(1, "A", "B", 30, 10), _game(2, "C", "A", 24, 21), _game(3, "B", "C", 14, 10, neutral=True),
+    ])
+    return priors, games
+
+
+def test_scoring_weight_one_ignores_efficiency():
+    priors, games = _blend_fixture()
+    base = update_ratings(priors, games, hfa=2.5, fbs_teams={"A", "B", "C"}, phantom_games=3)
+    eff = pd.DataFrame({"game_id": [1, 1], "team": ["A", "B"], "eff_margin": [-50.0, 50.0]})
+    got = update_ratings(priors, games, hfa=2.5, fbs_teams={"A", "B", "C"}, phantom_games=3,
+                         efficiency_margins=eff, scoring_weight=1.0)
+    pd.testing.assert_frame_equal(got, base)
+
+
+def test_zero_scoring_weight_with_eff_equal_to_actual_matches_scoring_only():
+    from cfb_power_ratings.srs import games_to_team_game_frame
+
+    priors, games = _blend_fixture()
+    base = update_ratings(priors, games, hfa=2.5, fbs_teams={"A", "B", "C"}, phantom_games=3)
+    tg = games_to_team_game_frame(games)
+    eff = pd.DataFrame({"game_id": tg["game_id"], "team": tg["team"],
+                        "eff_margin": (tg["points_for"] - tg["points_against"]).astype(float)})
+    got = update_ratings(priors, games, hfa=2.5, fbs_teams={"A", "B", "C"}, phantom_games=3,
+                         efficiency_margins=eff, scoring_weight=0.0)
+    pd.testing.assert_frame_equal(got, base)
+
+
+def test_games_missing_efficiency_fall_back_to_actual_margin():
+    priors, games = _blend_fixture()
+    base = update_ratings(priors, games, hfa=2.5, fbs_teams={"A", "B", "C"}, phantom_games=3)
+    empty_eff = pd.DataFrame(columns=["game_id", "team", "eff_margin"]).astype({"eff_margin": float})
+    got = update_ratings(priors, games, hfa=2.5, fbs_teams={"A", "B", "C"}, phantom_games=3,
+                         efficiency_margins=empty_eff, scoring_weight=0.3)
+    pd.testing.assert_frame_equal(got, base)
+
+
+def test_efficiency_blend_moves_rating_toward_efficiency():
+    """A won game 1 by 20; if efficiency says A dominated by far more, blending must raise A."""
+    priors, games = _blend_fixture()
+    base = update_ratings(priors, games, hfa=0.0, fbs_teams={"A", "B", "C"}, phantom_games=3).set_index("team")
+    eff = pd.DataFrame({"game_id": [1, 1], "team": ["A", "B"], "eff_margin": [45.0, -45.0]})
+    got = update_ratings(priors, games, hfa=0.0, fbs_teams={"A", "B", "C"}, phantom_games=3,
+                         efficiency_margins=eff, scoring_weight=0.5).set_index("team")
+    assert got.loc["A", "rating"] > base.loc["A", "rating"]
+    assert got.loc["B", "rating"] < base.loc["B", "rating"]
