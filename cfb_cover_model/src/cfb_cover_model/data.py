@@ -63,6 +63,16 @@ def load_raw_joined(cfg: dict | None = None) -> pd.DataFrame:
     return merged
 
 
+def load_schedule_df(cfg: dict | None = None) -> pd.DataFrame:
+    """Every game's season/week/home_team/away_team from results_csv, unfiltered by the
+    predictors CSV's week>=3 na.omit() - see schedule_features.py, which needs a team's
+    complete played-schedule (including early-season weeks the modeling frame itself drops)
+    to detect bye weeks correctly."""
+    cfg = cfg or load_data_config()
+    path = resolve_path(cfg["paths"]["results_csv"])
+    return pd.read_csv(path, usecols=["game_id", "season", "week", "home_team", "away_team"])
+
+
 def load_week_predictors_df(week_csv_path) -> pd.DataFrame:
     """Load a single week's CFB_Pred_Week_<N>.csv for inference (no results join - future
     games have no final score)."""

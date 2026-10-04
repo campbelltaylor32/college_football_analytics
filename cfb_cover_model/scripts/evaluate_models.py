@@ -17,6 +17,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from cfb_cover_model import experiment_paths
 from cfb_cover_model.config import load_data_config, load_features_config, load_modeling_config
 from cfb_cover_model.feature_engineering import apply_home_away_representation, build_transform_variant
 from cfb_cover_model.feature_selection.selection import apply_feature_set, fit_feature_set
@@ -40,13 +41,15 @@ from cfb_cover_model.modeling.splits import get_holdout_split
 from cfb_cover_model.modeling.stacking import fit_stacking_ensemble, safe_inner_min_seasons
 from train_models import get_reduced_features, make_track_a_specs, make_track_b_specs  # noqa: E402
 
-DATASET_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "modeling_dataset.parquet"
-FEATURE_COLUMNS_PATH = Path(__file__).resolve().parents[1] / "outputs" / "data_inventory" / "feature_columns.json"
-WINNING_CONFIG_PATH = Path(__file__).resolve().parents[1] / "outputs" / "feature_analysis" / "winning_feature_config.json"
-OOF_PATH = Path(__file__).resolve().parents[1] / "outputs" / "model_comparison" / "oof_predictions.csv"
-THRESHOLD_DIR = Path(__file__).resolve().parents[1] / "outputs" / "threshold_selection"
-CALIBRATION_DIR = Path(__file__).resolve().parents[1] / "outputs" / "calibration"
-MODEL_COMPARISON_DIR = Path(__file__).resolve().parents[1] / "outputs" / "model_comparison"
+# Set CFB_EXPERIMENT=<tag> to read/write an isolated dataset + outputs/experiments/<tag>/
+# subtree instead of the shared default paths - see src/cfb_cover_model/experiment_paths.py.
+DATASET_PATH = experiment_paths.dataset_path()
+FEATURE_COLUMNS_PATH = experiment_paths.output_path("data_inventory", "feature_columns.json")
+WINNING_CONFIG_PATH = experiment_paths.output_path("feature_analysis", "winning_feature_config.json")
+OOF_PATH = experiment_paths.output_path("model_comparison", "oof_predictions.csv")
+THRESHOLD_DIR = experiment_paths.output_path("threshold_selection")
+CALIBRATION_DIR = experiment_paths.output_path("calibration")
+MODEL_COMPARISON_DIR = experiment_paths.output_path("model_comparison")
 
 
 def build_full_variant(frame: pd.DataFrame, feature_columns: list[str], winning_cfg: dict) -> tuple[pd.DataFrame, list[str]]:

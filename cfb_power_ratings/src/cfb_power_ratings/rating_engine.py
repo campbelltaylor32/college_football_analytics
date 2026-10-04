@@ -18,7 +18,13 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from cfb_power_ratings.srs import DEFAULT_SRS_ITERATIONS, site_adjusted_margin, games_to_team_game_frame, iterate_ratings
+from cfb_power_ratings.srs import (
+    DEFAULT_SRS_ITERATIONS,
+    games_to_team_game_frame,
+    iterate_ratings,
+    site_adjusted_margin,
+    site_adjustment,
+)
 
 LEAGUE_AVERAGE = "__league_average__"
 
@@ -28,9 +34,11 @@ def update_ratings(
     completed_games_so_far: pd.DataFrame,
     hfa: float,
     fbs_teams: set[str],
-    phantom_games: int = 5,
+    phantom_games: float = 5,
     non_fbs_pool_name: str = "generic_low_major",
     iterations: int = DEFAULT_SRS_ITERATIONS,
+    efficiency_margins: pd.DataFrame | None = None,
+    scoring_weight: float = 1.0,
 ) -> pd.DataFrame:
     """`preseason_priors` is a Series indexed by team name (that team's preseason prior
     rating -- points on a neutral field). `completed_games_so_far` is the `games` table's own
@@ -41,11 +49,19 @@ def update_ratings(
     Returns one row per FBS team: team, rating, games_played, effective_prior_weight (the
     fraction of that team's blended rating that's still attributable to its preseason prior,
     i.e. phantom_games / (phantom_games + games_played) -- purely descriptive, not itself used
-    in the rating math, which handles the fade-out implicitly)."""
+    in the rating math, which handles the fade-out implicitly). `phantom_games` may be
+    fractional: the prior is one row per team carrying weight `phantom_games`, which is
+    numerically identical to that many repeated rows for whole numbers.
+
+    `efficiency_margins` (optional; columns game_id, team, eff_margin -- see
+    efficiency.efficiency_margins) blends a play-by-play points-equivalent margin into each
+    game's raw margin before home-field correction: scoring_weight * actual + (1 -
+    scoring_weight) * eff_margin. Games with no efficiency row fall back to the actual margin.
+    scoring_weight=1.0 (the default) is exactly the scoring-only rating."""
     teams = sorted(fbs_teams)
     priors = preseason_priors.reindex(teams).fillna(preseason_priors.mean() if len(preseason_priors) else 0.0)
 
-    real_games = pd.DataFrame(columns=["team", "opponent_rated", "site_adj_margin"])
+    real_games = pd.DataFrame(columns=["team", "opponent_rated", "site_adj_margin", "weight"])
     non_fbs_pool_rating = 0.0
     games_played = pd.Series(0, index=teams)
 
@@ -54,17 +70,27 @@ def update_ratings(
         tg = tg[tg["team"].isin(fbs_teams)].copy()
         if not tg.empty:
             tg["opponent_rated"] = np.where(tg["opponent"].isin(fbs_teams), tg["opponent"], non_fbs_pool_name)
-            tg["site_adj_margin"] = site_adjusted_margin(tg, hfa)
+            if efficiency_margins is not None and scoring_weight != 1.0:
+                raw = (tg["points_for"] - tg["points_against"]).astype(float)
+                eff = tg[["game_id", "team"]].merge(
+                    efficiency_margins[["game_id", "team", "eff_margin"]], on=["game_id", "team"], how="left",
+                )["eff_margin"].to_numpy()
+                eff = np.where(np.isnan(eff), raw, eff)
+                blended = scoring_weight * raw + (1.0 - scoring_weight) * eff
+                tg["site_adj_margin"] = blended + site_adjustment(tg, hfa)
+            else:
+                tg["site_adj_margin"] = site_adjusted_margin(tg, hfa)
             non_fbs_mask = tg["opponent_rated"] == non_fbs_pool_name
             if non_fbs_mask.any():
                 non_fbs_pool_rating = -float(tg.loc[non_fbs_mask, "site_adj_margin"].mean())
-            real_games = tg[["team", "opponent_rated", "site_adj_margin"]]
+            real_games = tg[["team", "opponent_rated", "site_adj_margin"]].assign(weight=1.0)
             games_played = tg.groupby("team").size().reindex(teams).fillna(0).astype(int)
 
     phantom = pd.DataFrame({
-        "team": np.repeat(teams, phantom_games),
+        "team": teams,
         "opponent_rated": LEAGUE_AVERAGE,
-        "site_adj_margin": np.repeat(priors.values, phantom_games),
+        "site_adj_margin": priors.values,
+        "weight": float(phantom_games),
     })
 
     combined = pd.concat([real_games, phantom], ignore_index=True)
@@ -72,10 +98,11 @@ def update_ratings(
     # its own -- without this cast, concatenating it with phantom's float column upcasts
     # site_adj_margin to object dtype, which silently breaks the arithmetic below.
     combined["site_adj_margin"] = combined["site_adj_margin"].astype(float)
+    combined["weight"] = combined["weight"].astype(float)
     fixed_ratings = {non_fbs_pool_name: non_fbs_pool_rating, LEAGUE_AVERAGE: 0.0}
     rating = iterate_ratings(
         teams, combined["team"].values, combined["opponent_rated"].values, combined["site_adj_margin"].values,
-        fixed_opponent_ratings=fixed_ratings, iterations=iterations,
+        fixed_opponent_ratings=fixed_ratings, iterations=iterations, weight_col=combined["weight"].values,
     )
 
     effective_prior_weight = phantom_games / (phantom_games + games_played)

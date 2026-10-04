@@ -21,17 +21,20 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from cfb_cover_model import experiment_paths
 from cfb_cover_model.config import load_data_config, load_features_config, load_modeling_config
 from cfb_cover_model.modeling.evaluation import precision_at_threshold
 from cfb_cover_model.modeling.splits import get_holdout_split
 from evaluate_models import build_full_variant
 from train_models import get_reduced_features, make_track_a_specs, make_track_b_specs
 
-DATASET_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "modeling_dataset.parquet"
-FEATURE_COLUMNS_PATH = Path(__file__).resolve().parents[1] / "outputs" / "data_inventory" / "feature_columns.json"
-WINNING_CONFIG_PATH = Path(__file__).resolve().parents[1] / "outputs" / "feature_analysis" / "winning_feature_config.json"
-THRESHOLD_TABLE_PATH = Path(__file__).resolve().parents[1] / "outputs" / "threshold_selection" / "chosen_threshold_per_model.csv"
-OUT_DIR = Path(__file__).resolve().parents[1] / "outputs" / "model_comparison"
+# Set CFB_EXPERIMENT=<tag> to read/write an isolated dataset + outputs/experiments/<tag>/
+# subtree instead of the shared default paths - see src/cfb_cover_model/experiment_paths.py.
+DATASET_PATH = experiment_paths.dataset_path()
+FEATURE_COLUMNS_PATH = experiment_paths.output_path("data_inventory", "feature_columns.json")
+WINNING_CONFIG_PATH = experiment_paths.output_path("feature_analysis", "winning_feature_config.json")
+THRESHOLD_TABLE_PATH = experiment_paths.output_path("threshold_selection", "chosen_threshold_per_model.csv")
+OUT_DIR = experiment_paths.output_path("model_comparison")
 
 # Curated shortlist - every Track A classifier and every Track B regressor, excluding
 # the two diagnostic-only baselines (majority_class, always_favorite) and the PCA/no-

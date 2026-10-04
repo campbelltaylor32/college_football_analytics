@@ -40,11 +40,22 @@ def _path_season(endpoint: str, year: int) -> Path:
     return RAW_DIR / endpoint / f"{year}.parquet"
 
 
+def _week_is_final(year: int, week: int) -> bool:
+    """True once the cached games file for (year, week) shows every game completed. A week cached
+    before (or during) its slate - e.g. by the midweek scoring run - must be re-fetched after the
+    games are played, or results/box scores/closing lines never make it into the cache."""
+    path = _path_weekly("games", year, week)
+    if not path.exists():
+        return False
+    games = pd.read_parquet(path, columns=["completed"])
+    return len(games) > 0 and bool(games["completed"].fillna(False).all())
+
+
 def get_weekly(endpoint: str, year: int, week: int, client, force_refresh: bool = False) -> pd.DataFrame:
     if endpoint not in _WEEKLY_ENDPOINTS:
         raise ValueError(f"Unknown weekly endpoint: {endpoint!r}")
     path = _path_weekly(endpoint, year, week)
-    if path.exists() and not force_refresh:
+    if path.exists() and not force_refresh and _week_is_final(year, week):
         return pd.read_parquet(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fetch_fn = _WEEKLY_ENDPOINTS[endpoint]

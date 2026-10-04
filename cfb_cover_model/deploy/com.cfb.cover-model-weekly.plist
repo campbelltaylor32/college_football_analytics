@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Weekly cfb_cover_model job: ingest -> retrain -> predict -> monitor, every Sunday.
+
+  Install (paths below assume the repo lives at
+  ~/Projects/CFB_Projects/college_football_analytics - edit all four absolute paths if not):
+
+    cp cfb_cover_model/deploy/com.cfb.cover-model-weekly.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.cfb.cover-model-weekly.plist
+
+  Force a run now:   launchctl kickstart -k gui/$(id -u)/com.cfb.cover-model-weekly
+  Check it:          launchctl print gui/$(id -u)/com.cfb.cover-model-weekly
+  Remove:            launchctl bootout gui/$(id -u)/com.cfb.cover-model-weekly
+
+  Requires the project venv at cfb_cover_model/.venv with `.[dev,boosting,serving]` installed,
+  and CFBD_API_KEY in the repo-root .env.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.cfb.cover-model-weekly</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/campbelltaylor/Projects/CFB_Projects/college_football_analytics/cfb_cover_model/.venv/bin/python</string>
+        <string>/Users/campbelltaylor/Projects/CFB_Projects/college_football_analytics/cfb_cover_model/scripts/run_weekly.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/campbelltaylor/Projects/CFB_Projects/college_football_analytics/cfb_cover_model</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+    </dict>
+
+    <!-- Sunday (Weekday 0) at 09:17 local. Off the :00 mark on purpose; late enough that
+         Saturday's slate is final, early enough to have picks before the next week. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>0</integer>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>17</integer>
+    </dict>
+
+    <!-- Do not fire on load/boot; only on the schedule above. launchd will run one missed
+         Sunday job when the Mac next wakes if it was asleep at 09:17. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/campbelltaylor/Projects/CFB_Projects/college_football_analytics/cfb_cover_model/logs/launchd.out</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/campbelltaylor/Projects/CFB_Projects/college_football_analytics/cfb_cover_model/logs/launchd.err</string>
+</dict>
+</plist>

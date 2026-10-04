@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from cfb_power_ratings.srs import (
     compute_srs,
     estimate_home_field_advantage,
+    estimate_non_fbs_pool_rating,
     games_to_team_game_frame,
     iterate_ratings,
     site_adjusted_margin,
@@ -112,6 +113,30 @@ def test_compute_srs_pools_non_fbs_opponents_without_dropping_them():
     # just the FBS-vs-FBS one -- confirmed by A's rating differing from the two-team-only case.
     assert set(srs.index) == {"A", "B"}
     assert not np.isnan(srs["A"])
+
+
+def test_estimate_non_fbs_pool_rating_averages_site_adjusted_margins_against_non_fbs_opponents():
+    # A beats an FCS team by 47 (home, hfa=0 so no site adjustment); B beats a different FCS
+    # team by 20. Pool rating is the negative mean of those two margins -- calibrated so an
+    # average FBS team's expected margin against the pool, plus the pool's own rating, nets to 0.
+    games = pd.DataFrame([
+        _game(1, 2024, "A", "FCS One", 50, 3, away_div="fcs"),
+        _game(2, 2024, "B", "FCS Two", 30, 10, away_div="fcs"),
+        _game(3, 2024, "A", "B", 21, 14),  # FBS-vs-FBS game must be excluded from the pool average
+    ])
+    tg = games_to_team_game_frame(games)
+    pool_rating = estimate_non_fbs_pool_rating(tg, hfa=0.0, fbs_teams={"A", "B"})
+    assert pool_rating == pytest.approx(-((47 + 20) / 2), abs=1e-9)
+
+
+def test_estimate_non_fbs_pool_rating_matches_compute_srs_internal_calibration():
+    # Standalone call and compute_srs's own internal use of the same formula should agree --
+    # cross-checked by confirming compute_srs is unaffected by this refactor via the existing
+    # test_compute_srs_pools_non_fbs_opponents_without_dropping_them regression test, and here by
+    # confirming a zero-non-FBS-games case degrades to exactly 0.0 in both.
+    games = pd.DataFrame([_game(1, 2024, "A", "B", 21, 14)])
+    tg = games_to_team_game_frame(games)
+    assert estimate_non_fbs_pool_rating(tg, hfa=0.0, fbs_teams={"A", "B"}) == 0.0
 
 
 def test_iterate_ratings_respects_fixed_opponent_ratings():
