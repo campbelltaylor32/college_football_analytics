@@ -60,7 +60,8 @@ if (WEEK == 0) {
   # Share of a typical team's rating still coming from the preseason prior:
   # phantom_games / (phantom_games + games_played), from the ratings CSV itself.
   ratings_all <- read.csv(ratings_path)
-  typical_games <- median(ratings_all$games_played)
+  # Mode, not median: median can land between counts (e.g. 6.5), which breaks %d below.
+  typical_games <- as.integer(names(which.max(table(ratings_all$games_played))))
   prior_pct <- round(100 * median(ratings_all$effective_prior_weight[ratings_all$games_played == typical_games]))
   results_note <- if (!is.na(sw)) {
     sprintf("%d%% final score, %d%% play-by-play efficiency (EPA/play & success rate)", round(100 * sw), round(100 * (1 - sw)))
