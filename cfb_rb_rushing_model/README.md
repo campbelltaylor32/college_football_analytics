@@ -85,6 +85,20 @@ exact same feature-building code path as training, and runs a hard data-quality 
 silently producing predictions from a broken data week (see `docs/assumptions_and_limitations.md`
 for why this check exists).
 
+On the site this runs every Tuesday through `.github/workflows/weekly-rb.yml` (see `../ci/README.md`):
+
+```bash
+python scripts/actual_week_rushing.py --season 2026 --week 8                 # grade last week -> week_2026_8_rb_rushing_actuals.csv
+python scripts/load_upcoming_games.py --season 2026 --week 9 --ephemeral     # throwaway DB only: inserts unplayed games
+python scripts/generate_week_predictions.py --season 2026 --week 9
+```
+
+`plays.rusher_player_name` is ~99% NULL from 2025 week 9 on (cfbfastR doesn't parse the
+`#28 S.Alexander rush ...` play-text format). `player_game_rushing.recover_rusher_names` rebuilds
+it from play_text (jersey + initial + last name, matched to `team_rosters`) and canonicalizes every
+name to the roster spelling. The completeness gate measures the rate after recovery, which is
+2-5% for 2022-2026.
+
 ## Eligibility (workload-relevance gate)
 
 Only RB-games where the player clears a rolling-carries threshold (evaluated as of their most

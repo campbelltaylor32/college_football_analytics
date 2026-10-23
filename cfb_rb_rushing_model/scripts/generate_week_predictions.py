@@ -44,6 +44,7 @@ logger = get_logger(__name__)
 
 OUTPUT_COLS = [
     "athlete_id", "player_name", "team", "opponent", "season", "week",
+    "game_id", "is_home", "neutral_site", "start_date",
     "predicted_rushing_yards", "prediction_interval_low", "prediction_interval_high",
     "carries_avg3_asof", "model_name", "model_version", "data_cutoff_date",
 ]

@@ -16,7 +16,7 @@ import pandas as pd
 from sqlalchemy.engine import Engine
 
 from cfb_rb_rushing_model.database import run_query
-from cfb_rb_rushing_model.player_game_rushing import build_raw_player_game_rushing
+from cfb_rb_rushing_model.player_game_rushing import build_raw_player_game_rushing, pull_jersey_rosters, recover_rusher_names
 from cfb_rb_rushing_model.player_resolution import resolve_players
 from cfb_rb_rushing_model.utils.logging import get_logger
 
@@ -70,12 +70,13 @@ def check_duplicate_keys(engine: Engine) -> dict[str, pd.DataFrame]:
 
 
 def check_rusher_name_completeness(engine: Engine, season: int | None = None, week: int | None = None) -> pd.DataFrame:
-    """Per-season (or per-week, if season+week given) NULL rate of plays.rusher_player_name on
-    rush plays. This is the hard gate wired into scripts/generate_week_predictions.py --
-    a NULL rate above MAX_ACCEPTABLE_RUSHER_NAME_NULL_RATE means the upstream ingestion for
-    that season/week silently broke (exactly what happened for 2025 weeks 9+, discovered
-    during planning), and any prediction built on it would be scored from a near-empty
-    rushing population, not a genuine data gap the model can be expected to handle."""
+    """Per-season (or per-week, if season+week given) share of rush plays with no usable
+    rusher name (teams with a roster that season), AFTER player_game_rushing.recover_rusher_names fills what it can from
+    play_text (`n_null_raw` keeps the pre-recovery count). This is the hard gate wired into
+    scripts/generate_week_predictions.py -- a rate above MAX_ACCEPTABLE_RUSHER_NAME_NULL_RATE
+    means the upstream ingestion broke in a way recovery can't paper over (2025 weeks 9+ and
+    all of 2026 are ~99% NULL raw, but recover to a few percent), and any prediction built on
+    it would be scored from a near-empty rushing population."""
     group_col = "week" if (season is not None and week is None) else "season"
     filters = []
     params: dict = {}
@@ -85,14 +86,31 @@ def check_rusher_name_completeness(engine: Engine, season: int | None = None, we
     if week is not None:
         filters.append("week = :week")
         params["week"] = week
-    where = f"WHERE play_type IN ('Rush','Rushing Touchdown') AND ({' AND '.join(filters)})" if filters else "WHERE play_type IN ('Rush','Rushing Touchdown')"
+    # Only teams with a roster that season: recovery (and the model) can't resolve anyone else,
+    # and 2026's roster pull is FBS-only, so FCS opponents' plays would otherwise swamp the rate.
+    filters.append("(pos_team, season) IN (SELECT DISTINCT team, season FROM team_rosters)")
+    where = f"WHERE play_type IN ('Rush','Rushing Touchdown') AND ({' AND '.join(filters)})"
 
     sql = f"""
-        SELECT {group_col}, COUNT(*) AS n, SUM(rusher_player_name IS NULL) AS n_null
+        SELECT {group_col}, COUNT(*) AS n, SUM(rusher_player_name IS NULL) AS n_null_raw
         FROM plays {where}
         GROUP BY {group_col} ORDER BY {group_col}
     """
     df = run_query(sql, params=params, engine=engine)
+    if df.empty:
+        return df.assign(n_null=[], null_rate=[], status=[])
+
+    nulls = run_query(
+        f"SELECT season, week, pos_team, rusher_player_name, play_text FROM plays {where} AND rusher_player_name IS NULL",
+        params=params, engine=engine,
+    )
+    if not nulls.empty:
+        recovered = recover_rusher_names(nulls, pull_jersey_rosters(engine, sorted(nulls["season"].unique().tolist())))
+        still_null = recovered[recovered["rusher_player_name"].isna()].groupby(group_col).size().rename("n_null")
+        df = df.merge(still_null, left_on=group_col, right_index=True, how="left")
+    else:
+        df["n_null"] = 0
+    df["n_null"] = df["n_null"].fillna(0).astype(int)
     df["null_rate"] = df["n_null"] / df["n"]
     df["status"] = df["null_rate"].apply(lambda r: "FAIL" if r > MAX_ACCEPTABLE_RUSHER_NAME_NULL_RATE else "PASS")
     return df

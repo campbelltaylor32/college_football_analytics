@@ -1,20 +1,21 @@
 # Weekly GitHub Actions jobs
 
-Two scheduled workflows publish the CFB tool pages on campbelltaylor32.github.io:
+Three scheduled workflows publish the CFB tool pages on campbelltaylor32.github.io:
 
 | Workflow | When (UTC) | Does |
 |---|---|---|
 | `weekly-results.yml` | Sun 15:00 | MySQL ingest of the finished week → cover-model ingest + monitoring (grades last week's picks) → power ratings + charts → Team Dashboard data → rebuild/render Picks, Power Rankings, Dashboard |
 | `weekly-picks.yml` | Tue 15:00 | cover-model retrain through last week → score this week → game cards/PDF → rebuild/render Picks |
+| `weekly-rb.yml` | Tue 16:00 | restore the Sunday MySQL dump → grade last week's RB projections → load this week's schedule → score eligible RBs → rebuild/render RB Projections |
 
-Both commit `outputs/` to `main` here, push `tools/` + `docs/` to the site repo's `main`, and share a `cfb-pipeline` concurrency group. Weeks come from the CFBD calendar via `ci/resolve_weeks.py`. Use **Run workflow** with `season` / `completed_week` to re-run a specific week, and untick `push` for a dry run (the built pages are uploaded as a run artifact instead).
+All three commit `outputs/` to `main` here, push `tools/` + `docs/` to the site repo's `main`, and share a `cfb-pipeline` concurrency group. Weeks come from the CFBD calendar via `ci/resolve_weeks.py`. Use **Run workflow** with `season` / `completed_week` to re-run a specific week, and untick `push` for a dry run (the built pages are uploaded as a run artifact instead).
 
 ## State
 
 Gitignored inputs live as assets on the `pipeline-state` release and are restored/saved by `ci/state.sh`:
 
 - `cover_state.tar.gz` holds the cover-model CFBD cache and extended history, the production artifacts, `Data/CFB_Gambling_*.csv`, and `preseason_model.joblib`.
-- `cfb_db.sql.gz` is a dump of the `cfb_football` MySQL DB. Only the Sunday job restores and re-saves it.
+- `cfb_db.sql.gz` is a dump of the `cfb_football` MySQL DB. Only the Sunday job re-saves it. The RB job restores it but never dumps it back, because it inserts not-yet-played games that `ingest_to_mysql.R` must not see.
 
 ## One-time setup
 

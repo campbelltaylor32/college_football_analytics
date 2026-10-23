@@ -1,0 +1,124 @@
+# Tuesday, after the picks job: publish this week's RB rushing projections.
+#   - grade last week's projections against the plays Sunday's job ingested
+#   - load this week's schedule into a throwaway copy of the DB and score it
+#   - rebuild the RB Projections page
+# The DB is restored from the Sunday dump and never dumped back: load_upcoming_games.py writes
+# not-yet-played games that ingest_to_mysql.R must not see (see that script's docstring).
+name: Weekly RB projections (Tuesday)
+
+on:
+  schedule:
+    - cron: "0 16 * * 2"   # Tue 16:00 UTC; queues behind weekly-picks.yml via the concurrency group
+  workflow_dispatch:
+    inputs:
+      season:
+        description: Season (blank = from the CFBD calendar)
+        required: false
+      completed_week:
+        description: Last completed week; projections are for the week after (blank = from the CFBD calendar)
+        required: false
+      push:
+        description: Push to the site and to main (uncheck for a dry run)
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cfb-pipeline
+  cancel-in-progress: false
+
+env:
+  CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+  GH_TOKEN: ${{ github.token }}
+  CFB_DB_HOST: 127.0.0.1
+  CFB_DB_PORT: "3306"
+  CFB_DB_USER: root
+  CFB_DB_PASSWORD: cfb
+  CFB_DB_NAME: cfb_football
+
+jobs:
+  rb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      mysql:
+        image: mysql:9
+        env:
+          MYSQL_ROOT_PASSWORD: cfb
+          MYSQL_DATABASE: cfb_football
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pcfb"
+          --health-interval=10s --health-timeout=5s --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true   # *.csv is in Git LFS (.gitattributes): OOF residuals for the intervals, past projections
+
+      - uses: ./.github/actions/cfb-setup
+        with:
+          site-token: ${{ secrets.SITE_REPO_TOKEN }}
+
+      - name: Resolve weeks
+        id: weeks
+        env:
+          SEASON: ${{ inputs.season }}
+          COMPLETED_WEEK: ${{ inputs.completed_week }}
+        run: cfb_cover_model/.venv/bin/python ci/resolve_weeks.py picks
+
+      - name: Restore MySQL
+        if: steps.weeks.outputs.run == 'true'
+        run: ci/state.sh restore-db
+
+      - name: RB model - grade last week + score upcoming week
+        if: steps.weeks.outputs.run == 'true'
+        working-directory: cfb_rb_rushing_model
+        run: |
+          S=${{ steps.weeks.outputs.season }}; C=${{ steps.weeks.outputs.completed }}; U=${{ steps.weeks.outputs.upcoming }}
+          .venv/bin/python scripts/actual_week_rushing.py --season "$S" --week "$C"
+          .venv/bin/python scripts/load_upcoming_games.py --season "$S" --week "$U" --ephemeral
+          .venv/bin/python scripts/generate_week_predictions.py --season "$S" --week "$U"
+
+      - name: Build + render site page
+        if: steps.weeks.outputs.run == 'true'
+        working-directory: site
+        run: |
+          ../cfb_cover_model/.venv/bin/python tools/build_cfb_weekly_tools.py \
+            --season ${{ steps.weeks.outputs.season }} --analytics-dir "$GITHUB_WORKSPACE" --only rb
+          quarto render tools/rb-projections.qmd
+
+      - name: Publish
+        if: steps.weeks.outputs.run == 'true' && (github.event_name == 'schedule' || inputs.push)
+        run: |
+          MSG="Weekly RB projections: ${{ steps.weeks.outputs.season }} week ${{ steps.weeks.outputs.upcoming }}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add cfb_rb_rushing_model/outputs/predictions
+          git diff --cached --quiet || git commit -q -m "$MSG"
+          git push origin HEAD:main
+
+          cd site
+          git add tools docs
+          git diff --cached --quiet || git commit -q -m "$MSG"
+          git push origin HEAD:main
+
+      - name: Dry-run artifacts
+        if: steps.weeks.outputs.run == 'true' && github.event_name == 'workflow_dispatch' && !inputs.push
+        uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-rb
+          path: |
+            cfb_rb_rushing_model/outputs/predictions
+            site/tools/rb-projections
+            site/docs/tools
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Weekly RB projections" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ${{ steps.weeks.outputs.reason }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ran: ${{ steps.weeks.outputs.run }}" >> "$GITHUB_STEP_SUMMARY"

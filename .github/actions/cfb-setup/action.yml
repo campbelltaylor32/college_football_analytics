@@ -1,6 +1,7 @@
 name: CFB pipeline setup
 description: >-
-  Shared setup for the weekly CFB jobs: Python venvs for cfb_cover_model and cfb_power_ratings
+  Shared setup for the weekly CFB jobs: Python venvs for cfb_cover_model, cfb_power_ratings and
+  cfb_rb_rushing_model
   (pinned to requirements-ci.txt so pickled models load), Quarto, the site repo checkout in
   ./site, and the gitignored pipeline state restored from the `pipeline-state` release.
 
@@ -22,11 +23,12 @@ runs:
         cache-dependency-path: |
           cfb_cover_model/requirements-ci.txt
           cfb_power_ratings/requirements-ci.txt
+          cfb_rb_rushing_model/requirements-ci.txt
 
     - name: Python venvs
       shell: bash
       run: |
-        for p in cfb_cover_model cfb_power_ratings; do
+        for p in cfb_cover_model cfb_power_ratings cfb_rb_rushing_model; do
           python -m venv "$p/.venv"
           "$p/.venv/bin/pip" install -q -r "$p/requirements-ci.txt"
           "$p/.venv/bin/pip" install -q --no-deps -e "$p"
