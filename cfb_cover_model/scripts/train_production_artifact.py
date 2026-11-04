@@ -25,7 +25,9 @@ tagged run. Unset (the default): identical to before this existed.
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -51,15 +53,27 @@ THRESHOLD_TABLE_PATH = experiment_paths.output_path("threshold_selection", "chos
 OUTPUT_DIR = experiment_paths.output_path("models", "production")
 
 
+_VERSION_RE = re.compile(r"^v(\d+)w(\d+)_(\d{8}T\d{6}Z)$")
+
+
 def _prune_old_versions(output_dir: Path, keep: int) -> list[Path]:
-    """Delete all but the `keep` most-recently-trained version directories (by name, which
-    sorts chronologically since versions are v{season}w{week}_{UTC timestamp}). Never deletes
-    latest.json itself or anything that isn't a version directory this script recognizes."""
+    """Delete all but the `keep` most-recently-trained version directories. Versions are
+    v{season}w{week}_{UTC timestamp}; they're ordered by the parsed (season, week, timestamp),
+    NOT by raw name - a plain string sort puts "w10" before "w7", which once deleted the
+    just-trained week-10 artifact out from under latest.json. Never deletes latest.json, the
+    version it points to, or anything that isn't a version directory this script recognizes."""
+    latest_pointer = output_dir / "latest.json"
+    current = json.loads(latest_pointer.read_text())["version"] if latest_pointer.exists() else None
+
+    def sort_key(p: Path) -> tuple[int, int, str]:
+        season, week, ts = _VERSION_RE.match(p.name).groups()
+        return int(season), int(week), ts
+
     version_dirs = sorted(
-        (p for p in output_dir.iterdir() if p.is_dir() and p.name.startswith("v")),
-        key=lambda p: p.name,
+        (p for p in output_dir.iterdir() if p.is_dir() and _VERSION_RE.match(p.name)),
+        key=sort_key,
     )
-    to_delete = version_dirs[:-keep] if keep > 0 else []
+    to_delete = [d for d in (version_dirs[:-keep] if keep > 0 else []) if d.name != current]
     for d in to_delete:
         for f in d.iterdir():
             f.unlink()
