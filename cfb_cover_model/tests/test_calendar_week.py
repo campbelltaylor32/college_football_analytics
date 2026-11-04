@@ -59,7 +59,8 @@ def test_first_sunday_of_season(patched_calendar):
 
 
 def test_final_regular_week_has_no_upcoming(patched_calendar):
-    r = _resolve(datetime(2025, 9, 26, 15, tzinfo=timezone.utc))
+    # Sunday after week 5 (the last week) - week 5 is complete, nothing left to pick
+    r = _resolve(datetime(2025, 9, 28, 15, tzinfo=timezone.utc))
     assert r.in_season
     assert r.completed_week == 5
     assert r.upcoming_week is None
@@ -93,3 +94,26 @@ def test_season_defaults_from_ref_year_without_env(patched_calendar, monkeypatch
     monkeypatch.delenv("PRODUCTION_SEASON", raising=False)
     r = calendar_week.resolve_weeks(None, ref=datetime(2025, 9, 14, 15, tzinfo=timezone.utc))
     assert r.season == 2025
+
+
+def test_tuesday_picks_run_does_not_skip_a_week(patched_calendar):
+    # Tuesday inside week 4's window: week 4's games haven't been played, so week 3 is the last
+    # completed week and the picks are for week 4 (regression: this used to resolve 4 -> 5).
+    r = _resolve(datetime(2025, 9, 16, 20, tzinfo=timezone.utc))
+    assert r.completed_week == 3 and r.upcoming_week == 4
+
+
+def test_sunday_and_following_tuesday_agree(patched_calendar):
+    sunday = _resolve(datetime(2025, 9, 14, 19, tzinfo=timezone.utc))
+    tuesday = _resolve(datetime(2025, 9, 16, 20, tzinfo=timezone.utc))
+    assert (sunday.completed_week, sunday.upcoming_week) == (tuesday.completed_week, tuesday.upcoming_week) == (3, 4)
+
+
+def test_saturday_does_not_count_its_own_week_complete(patched_calendar):
+    r = _resolve(datetime(2025, 9, 13, 23, tzinfo=timezone.utc))
+    assert r.completed_week == 2 and r.upcoming_week == 3
+
+
+def test_week_one_before_first_sunday_has_no_completed_week(patched_calendar):
+    r = _resolve(datetime(2025, 8, 28, 1, tzinfo=timezone.utc))
+    assert r.in_season and r.completed_week is None and r.upcoming_week == 1

@@ -7,24 +7,28 @@ the rest of this repo still uses - see docs/serving_and_monitoring.md section 8)
 boundaries. This model is regular-season only (same scope as the training data), so
 POSTSEASON weeks are ignored entirely.
 
-The rule, tuned for the Sunday-morning cadence run_weekly.py runs on:
+Despite the field names, CFBD's first_game_start / last_game_start are the week's *window*
+(Monday ~08:00 UTC -> next Monday ~07:59 UTC), not real kickoffs. So "the window has opened"
+is NOT "the week has been played": on the Tuesday picks run, the current week's window is
+already open while its games are days away. The rule:
 
-  completed_week = the highest REGULAR week whose games have already kicked off
-                   (first_game_start <= now)
+  a week is complete once its Saturday slate is done - ref >= window start + 6 days
+                   (Sunday ~08:00 UTC) - or its window has closed
+  completed_week = the highest REGULAR week that is complete
   upcoming_week  = completed_week + 1, or None if the regular season is over
 
-By Sunday morning, every Thursday/Friday/Saturday game of the week that "has kicked off"
-is finished, so treating it as complete is safe. Two documented caveats:
-  - Do NOT run this before Sunday - a Thursday/Friday run would call a week complete while
-    its Saturday slate is still unplayed. Manual runs pass explicit --completed-week.
-  - The handful of Sunday/Monday games some weeks have (week 1, holiday weekends) won't be
-    in that week's retrain; they get picked up by the next Sunday's run.
+So a Sunday results run and the following Tuesday picks run both resolve the same
+(completed=C, upcoming=C+1). Caveat: the handful of Sunday/Monday games some weeks have
+(week 1, holiday weekends) won't be in that Sunday's retrain; the next run picks them up.
 """
 from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+# Window opens Monday ~08:00 UTC; +6 days is Sunday ~08:00 UTC, after Saturday's late games.
+WEEK_COMPLETE_AFTER = timedelta(days=6)
 
 
 @dataclass(frozen=True)
@@ -95,7 +99,16 @@ def resolve_weeks(
             f"season {season} regular schedule is complete (through week {last.week})",
         )
 
-    completed_week = max(w.week for w in regular if w.first_game_start <= ref)
+    complete = [
+        w.week for w in regular
+        if ref >= w.first_game_start + WEEK_COMPLETE_AFTER or ref >= w.last_game_start
+    ]
+    if not complete:
+        return ResolvedWeeks(
+            season, None, first.week, True,
+            f"season {season}: week {first.week} in progress, no completed week yet",
+        )
+    completed_week = max(complete)
     upcoming_week = completed_week + 1 if completed_week < last.week else None
     return ResolvedWeeks(
         season, completed_week, upcoming_week, True,
